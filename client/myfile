@@ -1,0 +1,6 @@
+#!/bin/bash
+nmcli c add type wifi ifname wlo1 con-name hotspot autoconnect no ssid hotspot
+nmcli connection modify hotspot 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared
+nmcli connection modify hotspot wifi-sec.key-mgmt wpa-psk
+nmcli connection modify hotspot wifi-sec.psk "le password"
+nmcli connection up hotspot
