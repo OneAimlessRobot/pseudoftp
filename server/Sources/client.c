@@ -30,14 +30,14 @@ int receiveClientField(clientStruct* nextClient,char buff[],u_int64_t size){
 }
 
 
-int notifyClientAboutSizes(clientStruct* currClient){
+int notifyClientAboutSizes(clientStruct* currClient,int numRead){
 u_int16_t pingSize=(u_int16_t)acessVarMtx(&varMtx,&state->pingSize,0,-1);
 u_int64_t dataSize=acessVarMtx(&varMtx,&state->dataSize,0,-1);
 char ping[pingSize];
 memset(ping,0,pingSize);
 int client_socket=(int)acessVarMtx(&varMtx,&currClient->client_socket,0,-1);
 int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
-		snprintf(ping,pingSize,"%u %lu",pingSize, dataSize);
+		snprintf(ping,pingSize,"%u %d",pingSize, numRead);
 		send(client_socket,ping,pingSize,0);
 		
 		int status=receiveClientPing(currClient,ping,pingSize);

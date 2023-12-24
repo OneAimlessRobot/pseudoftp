@@ -158,15 +158,22 @@ static void* dataSending(void* argStruct){
 	while(acessVarMtx(&varMtx,&state->serverRunning,0,-1)&&!acessVarMtx(&varMtx,&nextClient->done,0,-1)){
 	
 	int numRead=read(fd,message,dataSize);
-	int toSend=notifyClientAboutSizes(nextClient);
+	int toSend=notifyClientAboutSizes(nextClient,numRead);
 	//s r	
 	if(toSend>0){
 			char buff3[LOGMSGLENGTH]={0};
 			snprintf(buff3,LOGMSGLENGTH,"Sending chunk of data to %s!!!!",inet_ntoa(nextClient->clientAddress.sin_addr));
 			pushLog(buff3);
-			u_int64_t numSent=send(client_socket,message,numRead,0);
+			int numSent=0;
+			while(numSent<numRead){
 			char pingBuff[pingSize];
-			receiveClientPing(nextClient,pingBuff,pingSize); 
+			numSent+=send(client_socket,message,numRead,0);
+			receiveClientPing(nextClient,pingBuff,pingSize);
+		
+			}
+				
+			
+			
 		acessVarMtx(&varMtx,&state->totalSent,numSent,3);
 		u_int64_t clientCurrTotal=acessVarMtx(&varMtx,&nextClient->numOfBytesSent,numSent,3);
 		u_int64_t clientGoal=acessVarMtx(&varMtx,&nextClient->bytesToRead,0,-1);
@@ -220,9 +227,9 @@ int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
 		memset(login.user,0,FIELDLENGTH+1);
 		memset(login.password,0,FIELDLENGTH+1);
 		send(client_socket,userPrompt,pingSize,0);
-		receiveClientField(currClient,login.user,pingSize);
+		receiveClientField(currClient,login.user,FIELDLENGTH+1);
 		send(client_socket,passPrompt,pingSize,0);
-		receiveClientField(currClient,login.password,pingSize);
+		receiveClientField(currClient,login.password,FIELDLENGTH+1);
 		//s r
 //printf("cheguei!!!\n");
 		if((storedClient=(loginStruct*)getHTElemComp(loadedLogins,&login))){

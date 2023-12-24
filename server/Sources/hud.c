@@ -48,9 +48,9 @@ static void printClientsOfStateStream(void){
 }	
 static void printAdminsOfStateStream(void){
 	
-	for(u_int64_t i=0;i<acessVarMtx(&varMtx,&state->clientsActive,0,-1);i++){
+	for(u_int64_t i=0;i<acessVarMtx(&varMtx,&state->adminsActive,0,-1);i++){
 		
-		clientStruct* currClient=(clientStruct*)acessListMtx(&listMtx,state->listOfClients,0,i,2);
+		clientStruct* currClient=(clientStruct*)acessListMtx(&listMtx,state->listOfAdmins,0,i,2);
 		printw("Admin number %lu: %s.\nLiga-nos da porta: %d\nTem numero de socket: %d\n\n",i,inet_ntoa(currClient->clientAddress.sin_addr),(int) ntohs(currClient->clientAddress.sin_port),(int32_t)acessVarMtx(&varMtx,&currClient->client_socket,0,-1));
 	}	
 }	

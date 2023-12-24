@@ -5,6 +5,6 @@ int receiveClientPing(clientStruct* nextClient,char buff[],u_int64_t size);
 
 int receiveClientField(clientStruct* nextClient,char buff[],u_int64_t size);
 
-int notifyClientAboutSizes(clientStruct* currClient);
+int notifyClientAboutSizes(clientStruct* currClient,int numRead);
 
 #endif

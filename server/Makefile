@@ -7,7 +7,7 @@ RESDIR= ./resources
  
 CURRDIR=echo `pwd`
  
-CC= clang
+CC=gcc
 DEPFLAGS= -MP -MD
 
 CFLAGS= -Wall -DPROGRAMPATHAUX="$(CURRDIR)"  -Wextra -g $(foreach D, $(INCLUDE), -I$(D)) $(DEPFLAGS) `sdl2-config --libs`

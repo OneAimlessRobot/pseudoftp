@@ -9,7 +9,7 @@ const char* pingCorrect="queroja";
 int client_socket;
 int fd;
 
-static int receiveServerPing(char buff[],u_int64_t size){
+static int64_t receiveServerPing(char buff[],u_int64_t size){
                 int iResult;
                 struct timeval tv;
                 fd_set rfds;
@@ -135,7 +135,7 @@ int main(int argc, char ** argv){
 		if(status<=0){
 			raise(SIGINT);
 		}
-		printf("Received chunk of data with size %ld from %s\n\nWritting....to here:%s\n",status,inet_ntoa(server_address.sin_addr),argv[1]);
+		//printf("Received chunk of data with size %ld from %s\nWritting....to here:%s\n",status,inet_ntoa(server_address.sin_addr),argv[1]);
 		status=write(fd,message,status);
 		if(!status){
 			printf("No bytes were written!!! End of file...\n");
@@ -143,7 +143,7 @@ int main(int argc, char ** argv){
 		else if(status==-1){
 			perror("No bytes written!!!! An error happened\n");
 		}
-		printf("Done!!!!!\n");
+		//printf("Done!!!!!\n");
 		send(client_socket,pingCorrect,strlen(pingCorrect),0);
 
 		

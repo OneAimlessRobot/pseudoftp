@@ -1,4 +1,3 @@
-
 #ifndef STACKLIST_H
 #define STACKLIST_H
 typedef struct stackList{
