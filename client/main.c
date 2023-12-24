@@ -5,18 +5,19 @@ static u_int64_t dataSize;
 const char* pingCorrect="queroja";
 #define MAXNUMBEROFTRIES 10
 #define MAXTIMEOUTSECS 100
-#define MAXTIMEOUTUSECS 0
+#define MAXTIMEOUTUSECS 100000
+#define FIELDLENGTH 127
 int client_socket;
 int fd;
 
-static int64_t receiveServerPing(char buff[],u_int64_t size){
+static int receiveServerPing(char buff[],u_int64_t size){
                 int iResult;
                 struct timeval tv;
                 fd_set rfds;
                 FD_ZERO(&rfds);
                 FD_SET(client_socket,&rfds);
                 tv.tv_sec=MAXTIMEOUTSECS;
-                tv.tv_usec=0;
+                tv.tv_usec=MAXTIMEOUTUSECS;
                 iResult=select(client_socket+1,&rfds,(fd_set*)0,(fd_set*)0,&tv);
                 if(iResult>0){
 		
@@ -28,24 +29,30 @@ static int64_t receiveServerPing(char buff[],u_int64_t size){
 
 void loginScreen(){
 	char userPrompt[pingSize];
-        char buff3[pingSize];
+        char buff3[FIELDLENGTH +1];
 	
 	memset(userPrompt,0,pingSize);
 	receiveServerPing(userPrompt,pingSize);
 	printf("%s",userPrompt);
 	fflush(stdout);
-	memset(buff3,0,pingSize);
+	memset(buff3,0,FIELDLENGTH +1);
 	scanf("%s",buff3);
-        send(client_socket,buff3,pingSize,0);
+        send(client_socket,buff3,FIELDLENGTH +1,0);
 	
 	memset(userPrompt,0,pingSize);
 	receiveServerPing(userPrompt,pingSize);
 	printf("%s",userPrompt);
 	fflush(stdout);
-	memset(buff3,0,pingSize);
+	memset(buff3,0,FIELDLENGTH +1);
 	scanf("%s",buff3);
-        send(client_socket,buff3,pingSize,0);
+        send(client_socket,buff3,FIELDLENGTH +1,0);
 	
+
+
+}
+void sigpipe_handler(int signal){
+
+
 
 
 }
@@ -76,6 +83,7 @@ int main(int argc, char ** argv){
 		return 0;
 	}
 	signal(SIGINT,sigint_handler);
+	signal(SIGPIPE,sigint_handler);
 	struct sockaddr_in server_address;
 	server_address.sin_family=AF_INET;
 	server_address.sin_port= htons(atoi(argv[2]));
@@ -124,28 +132,36 @@ int main(int argc, char ** argv){
 		sscanf(buff,"%hu %lu",&pingSize,&dataSize);
 		send(client_socket,pingCorrect,strlen(pingCorrect),0);
 
-		//printf("Tamanhos:\npings: %hu\ndados: %lu\n",pingSize,dataSize);
+		printf("Tamanhos:\npings: %hu\ndados: %lu\n",pingSize,dataSize);
 	
 	
-		
+		int counter=0;
 
 		char message[dataSize];
 		memset(message,0,dataSize);
-		status=receiveServerPing(message,dataSize);
-		if(status<=0){
+	int64_t len=0;
+	int64_t total=0;
+for (; total<dataSize;) { /* Watch out for buffer overflow */
+     	total+=len=receiveServerPing(message+total,dataSize);
+	
+	send(client_socket,pingCorrect,strlen(pingCorrect),0);
+}
+	
+		if(total<0){
 			raise(SIGINT);
 		}
-		//printf("Received chunk of data with size %ld from %s\nWritting....to here:%s\n",status,inet_ntoa(server_address.sin_addr),argv[1]);
-		status=write(fd,message,status);
+		//system("clear");
+		counter+=status=write(fd,message,total);
+		printf("Received chunk of data with size %ld from %s\n\nWritting....to here:%s\n",counter,inet_ntoa(server_address.sin_addr),argv[1]);
+
+//		printf("Recebidos: %d \n",counter);
 		if(!status){
 			printf("No bytes were written!!! End of file...\n");
 		}
 		else if(status==-1){
 			perror("No bytes written!!!! An error happened\n");
 		}
-		//printf("Done!!!!!\n");
-		send(client_socket,pingCorrect,strlen(pingCorrect),0);
-
+		printf("Done!!!!!\n");
 		
 	}
 
