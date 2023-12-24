@@ -4,8 +4,8 @@ static u_int16_t pingSize;
 static u_int64_t dataSize;
 const char* pingCorrect="queroja";
 #define MAXNUMBEROFTRIES 10
-#define MAXTIMEOUTSECS 100
-#define MAXTIMEOUTUSECS 100000
+#define MAXTIMEOUTSECS 0
+#define MAXTIMEOUTUSECS 1000000
 #define FIELDLENGTH 127
 int client_socket;
 int fd;
@@ -142,7 +142,7 @@ int main(int argc, char ** argv){
 	int64_t len=0;
 	int64_t total=0;
 for (; total<dataSize;) { /* Watch out for buffer overflow */
-     	total+=len=receiveServerPing(message+total,dataSize);
+     	total+=len=receiveServerPing(message+total,dataSize-total);
 	
 	send(client_socket,pingCorrect,strlen(pingCorrect),0);
 }
