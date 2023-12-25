@@ -61,7 +61,7 @@ void printServerState(void){
 	char date[LOGMSGLENGTH]={0};
 	formatCurrTime(date);
 	printw("Endereco do server: %s\n",inet_ntoa(state->server_address.sin_addr));
-	printw("Data: %s\nDatasize %lu\nPingsize %u\nNumero de clientes: %lu (de %lu (Hard limit:%lu))\nNumero de admins: %lu\nServidor ativo? %lu\nServidor a hibernar? %lu\nNumero de bytes enviados no total: %lu\nTaxa de trafego: %lf\nClientes: \n",date,acessVarMtx(&varMtx,&state->dataSize,0,-1),(u_int16_t)acessVarMtx(&varMtx,&state->pingSize,0,-1),acessVarMtx(&varMtx,&state->clientsActive,0,-1),acessVarMtx(&varMtx,&state->maxNumOfClients,0,-1),MAX_CLIENTS_HARD_LIMIT,acessVarMtx(&varMtx,&state->adminsActive,0,-1),acessVarMtx(&varMtx,&state->serverRunning,0,-1),acessVarMtx(&varMtx,&state->idle,0,-1),acessVarMtx(&varMtx,&state->totalSent,0,-1),(double)acessVarMtx(&varMtx,(u_int64_t*)&state->trafficRate,0,-1));
+	printw("Data: %s\nDatasize %lu\nNumero de clientes: %lu (de %lu (Hard limit:%lu))\nNumero de admins: %lu\nServidor ativo? %lu\nServidor a hibernar? %lu\nNumero de bytes enviados no total: %lu\nTaxa de trafego: %lf\nClientes: \n",date,acessVarMtx(&varMtx,&state->dataSize,0,-1),acessVarMtx(&varMtx,&state->clientsActive,0,-1),acessVarMtx(&varMtx,&state->maxNumOfClients,0,-1),MAX_CLIENTS_HARD_LIMIT,acessVarMtx(&varMtx,&state->adminsActive,0,-1),acessVarMtx(&varMtx,&state->serverRunning,0,-1),acessVarMtx(&varMtx,&state->idle,0,-1),acessVarMtx(&varMtx,&state->totalSent,0,-1),(double)acessVarMtx(&varMtx,(u_int64_t*)&state->trafficRate,0,-1));
 	printClientsOfStateStream();
 	printAdminsOfStateStream();
 	refresh();

@@ -23,8 +23,6 @@ void getAdminList(int64_t argc,clientStruct*client, void** argv,char buff[LINESI
 
 void setMaxClientQuota(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZE]);
 
-void setPingSize(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZE]);
-
 void setDataSize(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZE]);
 
 void sair(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZE]);

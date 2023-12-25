@@ -1,12 +1,12 @@
 #include "Includes/preprocessor.h"
 
-static u_int16_t pingSize;
 static u_int64_t dataSize;
 const char* pingCorrect="queroja";
 #define MAXNUMBEROFTRIES 10
 #define MAXTIMEOUTSECS 0
 #define MAXTIMEOUTUSECS 1000000
 #define FIELDLENGTH 127
+#define PINGSIZE 100
 int client_socket;
 int fd;
 
@@ -28,19 +28,19 @@ static int receiveServerPing(char buff[],u_int64_t size){
 }
 
 void loginScreen(){
-	char userPrompt[pingSize];
+	char userPrompt[FIELDLENGTH+1];
         char buff3[FIELDLENGTH +1];
 	
-	memset(userPrompt,0,pingSize);
-	receiveServerPing(userPrompt,pingSize);
+	memset(userPrompt,0,FIELDLENGTH+1);
+	receiveServerPing(userPrompt,FIELDLENGTH+1);
 	printf("%s",userPrompt);
 	fflush(stdout);
 	memset(buff3,0,FIELDLENGTH +1);
 	scanf("%s",buff3);
         send(client_socket,buff3,FIELDLENGTH +1,0);
 	
-	memset(userPrompt,0,pingSize);
-	receiveServerPing(userPrompt,pingSize);
+	memset(userPrompt,0,FIELDLENGTH+1);
+	receiveServerPing(userPrompt,FIELDLENGTH+1);
 	printf("%s",userPrompt);
 	fflush(stdout);
 	memset(buff3,0,FIELDLENGTH +1);
@@ -109,30 +109,30 @@ int main(int argc, char ** argv){
 	printf("Conectado a %s!!!!!!\n",inet_ntoa(server_address.sin_addr));
 	
 	//receber e armazenar dados recebidos
-	char buff[1024];
+	char buff[PINGSIZE];
 	memset(buff,0,1024);
 	
-        recv(client_socket,buff,1024,0);
-	send(client_socket,buff,pingSize,0);
+        recv(client_socket,buff,PINGSIZE,0);
+	send(client_socket,buff,PINGSIZE,0);
 	char buff2[1024]={0};
-        sscanf(buff,"%hu %lu %s",&pingSize,&dataSize,buff2);
-	printf("Tamanhos:\npings: %hu\ndados: %lu\n",pingSize,dataSize);
+        sscanf(buff,"%lu %s",&dataSize,buff2);
+	printf("Tamanhos:\ndados: %lu\n",dataSize);
 	loginScreen();
-	memset(buff,0,pingSize);
-        recv(client_socket,buff,pingSize,0);
+	memset(buff,0,PINGSIZE);
+        recv(client_socket,buff,PINGSIZE,0);
         printf("%s\n",buff);
 	//R S
 	while(1){
-		char buff[pingSize];
-		memset(buff,0,pingSize);
-		int64_t status=receiveServerPing(buff,pingSize);
+		char buff[PINGSIZE];
+		memset(buff,0,PINGSIZE);
+		int64_t status=receiveServerPing(buff,PINGSIZE);
 		if(status<0){
 			raise(SIGINT);
 		}
-		sscanf(buff,"%hu %lu",&pingSize,&dataSize);
+		sscanf(buff,"%lu",&dataSize);
 		send(client_socket,pingCorrect,strlen(pingCorrect),0);
 
-		printf("Tamanhos:\npings: %hu\ndados: %lu\n",pingSize,dataSize);
+		printf("Tamanhos:\ndados: %lu\n",dataSize);
 	
 	
 		int counter=0;
@@ -144,8 +144,8 @@ int main(int argc, char ** argv){
 for (; total<dataSize;) { /* Watch out for buffer overflow */
      	total+=len=receiveServerPing(message+total,dataSize-total);
 	
-	send(client_socket,pingCorrect,strlen(pingCorrect),0);
 }
+	send(client_socket,pingCorrect,strlen(pingCorrect),0);
 	
 		if(total<0){
 			raise(SIGINT);

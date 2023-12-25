@@ -149,7 +149,6 @@ static void* dataSending(void* argStruct){
 	clientStruct* nextClient= (clientStruct*) argStruct;
 	int fd=acessVarMtx(&varMtx,&nextClient->fd,0,-1);
 	u_int64_t dataSize=acessVarMtx(&varMtx,&state->dataSize,0,-1);
-	u_int16_t pingSize=(u_int16_t)acessVarMtx(&varMtx,&state->pingSize,0,-1);
 	char message[dataSize];
 	memset(message,0,dataSize);
 	int client_socket=acessVarMtx(&varMtx,&nextClient->client_socket,0,-1);
@@ -164,14 +163,9 @@ static void* dataSending(void* argStruct){
 			char buff3[LOGMSGLENGTH]={0};
 			snprintf(buff3,LOGMSGLENGTH,"Sending chunk of data to %s!!!!",inet_ntoa(nextClient->clientAddress.sin_addr));
 			pushLog(buff3);
-			int numSent=0;
-			while(numSent<numRead){
-			char pingBuff[pingSize];
-			numSent+=send(client_socket,message,numRead,0);
-			receiveClientPing(nextClient,pingBuff,pingSize);
-		
-			}
-				
+			int numSent=send(client_socket,message,numRead,0);
+			receiveClientPing(nextClient,pingCorrect,strlen(pingCorrect));
+			
 			
 			
 		acessVarMtx(&varMtx,&state->totalSent,numSent,3);
@@ -202,40 +196,39 @@ static void* dataSending(void* argStruct){
 }
 static int processClientInfo(clientStruct* currClient){
 //printf("cheguei!!!\n");
-u_int16_t pingSize=(u_int16_t)acessVarMtx(&varMtx,&state->pingSize,0,-1);
 u_int64_t dataSize=acessVarMtx(&varMtx,&state->dataSize,0,-1);
-char ping[pingSize];
-char userPrompt[pingSize];
-char passPrompt[pingSize];
+char ping[PINGSIZE];
+char userPrompt[FIELDLENGTH+1];
+char passPrompt[FIELDLENGTH+1];
 //printf("cheguei!!!\n");
-memset(ping,0,pingSize);
-memset(userPrompt,0,pingSize);
-memset(passPrompt,0,pingSize);
+memset(ping,0,PINGSIZE);
+memset(userPrompt,0,FIELDLENGTH+1);
+memset(passPrompt,0,FIELDLENGTH+1);
 int client_socket=(int)acessVarMtx(&varMtx,&currClient->client_socket,0,-1);
 int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
-		snprintf(ping,pingSize,"%u %lu %s",pingSize, dataSize,pingCorrect);
+		snprintf(ping,PINGSIZE,"%lu %s", dataSize,pingCorrect);
 		strcpy(userPrompt,userNamePrompt);
 		strcpy(passPrompt,passWordPrompt);
-		send(client_socket,ping,pingSize,0);
+		send(client_socket,ping,PINGSIZE,0);
 		//printf("cheguei!!!\n");
-		memset(ping,0,pingSize);
-		receiveClientPing(currClient,ping,pingSize);
+		memset(ping,0,PINGSIZE);
+		receiveClientPing(currClient,ping,PINGSIZE);
 		char buff3[LOGMSGLENGTH]={0};
 		snprintf(buff3,LOGMSGLENGTH,"client got the sizes!!!!!!!");
 		pushLog(buff3);
 		loginStruct login,*storedClient;
 		memset(login.user,0,FIELDLENGTH+1);
 		memset(login.password,0,FIELDLENGTH+1);
-		send(client_socket,userPrompt,pingSize,0);
+		send(client_socket,userPrompt,FIELDLENGTH+1,0);
 		receiveClientField(currClient,login.user,FIELDLENGTH+1);
-		send(client_socket,passPrompt,pingSize,0);
+		send(client_socket,passPrompt,FIELDLENGTH+1,0);
 		receiveClientField(currClient,login.password,FIELDLENGTH+1);
 		//s r
 //printf("cheguei!!!\n");
 		if((storedClient=(loginStruct*)getHTElemComp(loadedLogins,&login))){
 			
 			
-			if(!strncmp(login.password,storedClient->password,pingSize)){
+			if(!strncmp(login.password,storedClient->password,PINGSIZE)){
 			int size=lseek(fd,0,SEEK_END);
 			lseek(fd,0,SEEK_SET);
 			acessVarMtx(&varMtx,&currClient->bytesToRead,size,0);
@@ -244,10 +237,10 @@ int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
 			strncpy(currClient->login,storedClient->user,FIELDLENGTH);
 			acessVarMtx(&varMtx,&state->clientsActive,0,1);
 			acessListMtx(&listMtx,state->listOfClients,currClient,0,0);
-			char buff[pingSize];
-			memset(buff,0,pingSize);
-			snprintf(buff,pingSize,"Bem vindo, %s!\n",login.user);
-			send(client_socket,buff,pingSize,0);
+			char buff[PINGSIZE];
+			memset(buff,0,PINGSIZE);
+			snprintf(buff,PINGSIZE,"Bem vindo, %s!\n",login.user);
+			send(client_socket,buff,PINGSIZE,0);
 			pthread_create(&currClient->threadid,NULL,dataSending,currClient);
 			return 1;
 			}
@@ -358,7 +351,7 @@ static void* connectionAccepting(void* argStruct){
 
 
 }
-void initEverything(u_int16_t port,char*pathToFile,u_int16_t startPingSize,u_int64_t startDataSize,u_int16_t startMaxNumOfClients){
+void initEverything(u_int16_t port,char*pathToFile,u_int64_t startDataSize,u_int16_t startMaxNumOfClients){
 	
 	loadLogins();
 	logfd=creat(logFile,0777);
@@ -410,7 +403,6 @@ void initEverything(u_int16_t port,char*pathToFile,u_int16_t startPingSize,u_int
 	state->listOfAdmins->head=NULL;
 	state->logs=initDLStack(LOGMSGLENGTH);
 	state->kickedClients=initDLStack(sizeof(clientStruct));
-	state->pingSize=startPingSize;
 	state->dataSize=startDataSize;
 	
 	initscr();

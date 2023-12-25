@@ -3,12 +3,10 @@
 #include "../Includes/infometers.h"
 
 extern const char* pingCorrect;
-
 extern serverState* state;
 extern pthread_mutex_t varMtx;
 
 int receiveClientPing(clientStruct* nextClient,char buff[],u_int64_t size){
-		u_int16_t pingSize=(u_int16_t)acessVarMtx(&varMtx,&state->dataSize,0,-1);
 		int client_socket=(int)acessVarMtx(&varMtx,&nextClient->client_socket,0,-1);
 		int iResult;
 		struct timeval tv;
@@ -31,16 +29,15 @@ int receiveClientField(clientStruct* nextClient,char buff[],u_int64_t size){
 
 
 int notifyClientAboutSizes(clientStruct* currClient,int numRead){
-u_int16_t pingSize=(u_int16_t)acessVarMtx(&varMtx,&state->pingSize,0,-1);
 u_int64_t dataSize=acessVarMtx(&varMtx,&state->dataSize,0,-1);
-char ping[pingSize];
-memset(ping,0,pingSize);
+char ping[PINGSIZE];
+memset(ping,0,PINGSIZE);
 int client_socket=(int)acessVarMtx(&varMtx,&currClient->client_socket,0,-1);
 int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
-		snprintf(ping,pingSize,"%u %d",pingSize, numRead);
-		send(client_socket,ping,pingSize,0);
+		snprintf(ping,PINGSIZE,"%d", numRead);
+		send(client_socket,ping,PINGSIZE,0);
 		
-		int status=receiveClientPing(currClient,ping,pingSize);
+		int status=receiveClientPing(currClient,ping,strlen(pingCorrect));
 		//printf("%d %hu\n",status,pingSize);
 		if(status>0){
 			if(!strncmp(ping,pingCorrect,strlen(pingCorrect))){

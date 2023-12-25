@@ -1,6 +1,5 @@
 #include "Includes/preprocessor.h"
 
-static u_int16_t pingSize;
 static u_int64_t dataSize;
 
 const char* pingCorrect="queroja";
@@ -9,6 +8,8 @@ const char* pingCorrect="queroja";
 #define MAXTIMEOUTSECS 100
 #define LINESIZE 1024
 #define MAXTIMEOUTUSECS 0
+#define PINGSIZE 100
+#define FIELDLENGTH 127
 int client_socket;
 int fd;
 
@@ -28,24 +29,26 @@ static int64_t receiveServerOutput(char buff[],u_int64_t size){
 }
 
 void loginScreen(){
-        char userPrompt[pingSize];
-        char buff3[pingSize];
+ 
+ 	char userPrompt[FIELDLENGTH+1];
+        char buff3[FIELDLENGTH +1];
 
-        memset(userPrompt,0,pingSize);
-        receiveServerOutput(userPrompt,pingSize);
+        memset(userPrompt,0,FIELDLENGTH+1);
+        receiveServerOutput(userPrompt,FIELDLENGTH+1);
         printf("%s",userPrompt);
         fflush(stdout);
-        memset(buff3,0,pingSize);
+        memset(buff3,0,FIELDLENGTH +1);
         scanf("%s",buff3);
-        send(client_socket,buff3,pingSize,0);
+        send(client_socket,buff3,FIELDLENGTH +1,0);
 
-        memset(userPrompt,0,pingSize);
-        receiveServerOutput(userPrompt,pingSize);
+        memset(userPrompt,0,FIELDLENGTH+1);
+        receiveServerOutput(userPrompt,FIELDLENGTH+1);
         printf("%s",userPrompt);
         fflush(stdout);
-        memset(buff3,0,pingSize);
+        memset(buff3,0,FIELDLENGTH +1);
         scanf("%s",buff3);
-        send(client_socket,buff3,pingSize,0);
+        send(client_socket,buff3,FIELDLENGTH +1,0);
+
 
 
 
@@ -101,18 +104,18 @@ int main(int argc, char ** argv){
 	
 	//receber e armazenar dados recebidos
         
-	char buff[1024];
-	recv(client_socket,buff,1024,0);
-        char buff2[1024]={0};
-        sscanf(buff,"%hu %lu %s",&pingSize,&dataSize,buff2);
+	char buff[PINGSIZE];
+	recv(client_socket,buff,PINGSIZE,0);
+        char buff2[PINGSIZE]={0};
+        sscanf(buff,"%lu %s",&dataSize,buff2);
 
-        printf("Tamanhos:\npings: %hu\ndados: %lu\Ping msg:%s\n",pingSize,dataSize,buff2);
+        printf("Tamanhos:\ndados: %lu\Ping msg:%s\n",dataSize,buff2);
 
 
 	loginScreen();	
-	memset(buff,0,1024);
-	recv(client_socket,buff,1024,0);
-	printf("%s\n",buff);
+	char buff3[1024]={0};
+	recv(client_socket,buff3,1024,0);
+	printf("%s\n",buff3);
 	fflush(stdout);
 	while(1){
 		char buff[LINESIZE];

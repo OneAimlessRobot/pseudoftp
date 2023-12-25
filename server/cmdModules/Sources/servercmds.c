@@ -6,7 +6,6 @@
 #include "../../Includes/login.h"
 #include "../../Includes/accounts.h"
 cmdstruct servercmds[]={
-			{"sps",setPingSize,"Altera tamanho de ping"},
 			{"sds",setDataSize,"Altera tamanho de dados"},
 			{"scq",setMaxClientQuota,"Muda o numero maximo de clients (Nao deve ser maior que o hard limit dito por 'chl')"},
 			{"alogin",addLogin,"Adiciona uma nova conta (username e password)"},
@@ -33,18 +32,6 @@ extern pthread_mutex_t stackMtx;
 extern pthread_cond_t kickingCond;
 extern pthread_mutex_t listMtx;
 
-void setPingSize(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZE]){
-
-	if(argc!=2){
-
-		snprintf(buff,LINESIZE,"Numero errado de argumentos!\n");
-		return;
-	}
-	
-	acessVarMtx(&varMtx,&state->pingSize,atoi(argv[1]),0);
-
-}
-
 void setDataSize(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZE]){
 
 
@@ -59,7 +46,7 @@ void setDataSize(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZ
 
 void getPingSize(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZE]){
 
-	snprintf(buff,LINESIZE,"Tamanho de ping: %hu bytes.\n",(u_int16_t)acessVarMtx(&varMtx,&state->pingSize,0,-1));
+	snprintf(buff,LINESIZE,"Tamanho de ping: %hu bytes.\n",PINGSIZE);
           
 }
 

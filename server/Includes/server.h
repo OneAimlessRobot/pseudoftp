@@ -3,6 +3,7 @@
 
 
 #define LOGMSGLENGTH 100
+#define PINGSIZE 100
 #define OUTPUTLENGTH 100000
 #define MAXTIMEOUTSECS 0
 #define MAXTIMEOUTUSECS 1000000
@@ -28,8 +29,7 @@ typedef struct serverState{
 	u_int64_t timeActive;
 	double trafficRate;
 	u_int64_t dataSize;
-	u_int16_t pingSize;
-
+	
 }serverState;
 
 typedef struct clientStruct{
@@ -52,7 +52,7 @@ typedef struct command{
 
 
 }command;
-void initEverything(u_int16_t port,char* pathToFile,u_int16_t startPingSize,u_int64_t startDataSize,u_int16_t startMaxNumOfClients);
+void initEverything(u_int16_t port,char* pathToFile,u_int64_t startDataSize,u_int16_t startMaxNumOfClients);
 
 void sigint_handler(int signal);
 
