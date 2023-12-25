@@ -111,13 +111,13 @@ int main(int argc, char ** argv){
 	//receber e armazenar dados recebidos
 	char buff[PINGSIZE]={0};
 	
-        recv(client_socket,buff,PINGSIZE,0);
+        receiveServerPing(buff,PINGSIZE);
 	send(client_socket,buff,PINGSIZE,0);
         sscanf(buff,"%lu",&dataSize);
 	printf("Tamanhos:\ndados: %lu\n",dataSize);
 	loginScreen();
 	memset(buff,0,PINGSIZE);
-        recv(client_socket,buff,PINGSIZE,0);
+	receiveServerPing(buff,PINGSIZE);
         printf("%s\n",buff);
 	//R S
 	while(1){
