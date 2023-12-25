@@ -8,7 +8,7 @@ const char* pingCorrect="queroja";
 #define MAXTIMEOUTSECS 100
 #define LINESIZE 1024
 #define MAXTIMEOUTUSECS 0
-#define PINGSIZE 100
+#define PINGSIZE 50
 #define FIELDLENGTH 127
 int client_socket;
 int fd;
@@ -106,10 +106,9 @@ int main(int argc, char ** argv){
         
 	char buff[PINGSIZE];
 	recv(client_socket,buff,PINGSIZE,0);
-        char buff2[PINGSIZE]={0};
-        sscanf(buff,"%lu %s",&dataSize,buff2);
+        sscanf(buff,"%lu",&dataSize);
 
-        printf("Tamanhos:\ndados: %lu\Ping msg:%s\n",dataSize,buff2);
+        printf("Tamanhos:\ndados: %lu\n",dataSize);
 
 
 	loginScreen();	

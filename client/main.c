@@ -6,7 +6,7 @@ const char* pingCorrect="queroja";
 #define MAXTIMEOUTSECS 0
 #define MAXTIMEOUTUSECS 1000000
 #define FIELDLENGTH 127
-#define PINGSIZE 100
+#define PINGSIZE 50
 int client_socket;
 int fd;
 
@@ -109,13 +109,11 @@ int main(int argc, char ** argv){
 	printf("Conectado a %s!!!!!!\n",inet_ntoa(server_address.sin_addr));
 	
 	//receber e armazenar dados recebidos
-	char buff[PINGSIZE];
-	memset(buff,0,1024);
+	char buff[PINGSIZE]={0};
 	
         recv(client_socket,buff,PINGSIZE,0);
 	send(client_socket,buff,PINGSIZE,0);
-	char buff2[1024]={0};
-        sscanf(buff,"%lu %s",&dataSize,buff2);
+        sscanf(buff,"%lu",&dataSize);
 	printf("Tamanhos:\ndados: %lu\n",dataSize);
 	loginScreen();
 	memset(buff,0,PINGSIZE);

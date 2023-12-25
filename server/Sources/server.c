@@ -206,7 +206,7 @@ memset(userPrompt,0,FIELDLENGTH+1);
 memset(passPrompt,0,FIELDLENGTH+1);
 int client_socket=(int)acessVarMtx(&varMtx,&currClient->client_socket,0,-1);
 int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
-		snprintf(ping,PINGSIZE,"%lu %s", dataSize,pingCorrect);
+		snprintf(ping,PINGSIZE,"%lu", dataSize);
 		strcpy(userPrompt,userNamePrompt);
 		strcpy(passPrompt,passWordPrompt);
 		send(client_socket,ping,PINGSIZE,0);
