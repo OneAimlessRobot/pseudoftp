@@ -3,8 +3,8 @@
 static u_int64_t dataSize;
 const char* pingCorrect="queroja";
 #define MAXNUMBEROFTRIES 10
-#define MAXTIMEOUTSECS 0
-#define MAXTIMEOUTUSECS 10000000
+#define MAXTIMEOUTSECS 1
+#define MAXTIMEOUTUSECS 0
 #define FIELDLENGTH 127
 #define PINGSIZE 50
 int client_socket;
