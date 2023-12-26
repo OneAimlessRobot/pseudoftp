@@ -30,6 +30,19 @@ pthread_cond_t kickingCond= PTHREAD_COND_INITIALIZER;
 static pthread_t connectionAccepter,dataSender,graphics,rateInfoUpdater,clientKicker,serverLogWritter;
 
 
+static int receiveWholeClientPing(clientStruct*client,char message[],u_int64_t size){
+                int counter=0;
+        int64_t len=0;
+        int64_t total=0;
+
+for (; total<size;) { /* Watch out for buffer overflow */
+        total+=len=receiveClientPing(client,message+total,size-total);
+
+}
+        return total;
+
+}
+
 void cleanup(void){
 	
 	pthread_join(rateInfoUpdater,NULL);
@@ -207,12 +220,13 @@ memset(passPrompt,0,FIELDLENGTH+1);
 int client_socket=(int)acessVarMtx(&varMtx,&currClient->client_socket,0,-1);
 int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
 		snprintf(ping,PINGSIZE,"%lu", dataSize);
+		printf("%s\n",ping);
 		strcpy(userPrompt,userNamePrompt);
 		strcpy(passPrompt,passWordPrompt);
 		send(client_socket,ping,PINGSIZE,0);
-		//printf("cheguei!!!\n");
 		memset(ping,0,PINGSIZE);
-		receiveClientPing(currClient,ping,PINGSIZE);
+		receiveWholeClientPing(currClient,ping,PINGSIZE);
+		printf("cheguei!!! O tamanho de ping do cliente é:%s\n",ping);
 		char buff3[LOGMSGLENGTH]={0};
 		snprintf(buff3,LOGMSGLENGTH,"client got the sizes!!!!!!!");
 		pushLog(buff3);
@@ -220,9 +234,9 @@ int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
 		memset(login.user,0,FIELDLENGTH+1);
 		memset(login.password,0,FIELDLENGTH+1);
 		send(client_socket,userPrompt,FIELDLENGTH+1,0);
-		receiveClientField(currClient,login.user,FIELDLENGTH+1);
+		receiveWholeClientPing(currClient,login.user,FIELDLENGTH+1);
 		send(client_socket,passPrompt,FIELDLENGTH+1,0);
-		receiveClientField(currClient,login.password,FIELDLENGTH+1);
+		receiveWholeClientPing(currClient,login.password,FIELDLENGTH+1);
 		//s r
 //printf("cheguei!!!\n");
 		if((storedClient=(loginStruct*)getHTElemComp(loadedLogins,&login))){

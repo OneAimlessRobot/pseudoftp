@@ -27,12 +27,25 @@ static int receiveServerPing(char buff[],u_int64_t size){
 		return -1;
 }
 
+
+static int receiveWholeServerPing(char message[],u_int64_t size){
+		int counter=0;
+	int64_t len=0;
+	int64_t total=0;
+
+for (; total<size;) { /* Watch out for buffer overflow */
+     	total+=len=receiveServerPing(message+total,size-total);
+	
+}
+	return total;
+
+}
 void loginScreen(){
 	char userPrompt[FIELDLENGTH+1];
         char buff3[FIELDLENGTH +1];
 	
 	memset(userPrompt,0,FIELDLENGTH+1);
-	receiveServerPing(userPrompt,FIELDLENGTH+1);
+	receiveWholeServerPing(userPrompt,FIELDLENGTH+1);
 	printf("%s",userPrompt);
 	fflush(stdout);
 	memset(buff3,0,FIELDLENGTH +1);
@@ -40,7 +53,7 @@ void loginScreen(){
         send(client_socket,buff3,FIELDLENGTH +1,0);
 	
 	memset(userPrompt,0,FIELDLENGTH+1);
-	receiveServerPing(userPrompt,FIELDLENGTH+1);
+	receiveWholeServerPing(userPrompt,FIELDLENGTH+1);
 	printf("%s",userPrompt);
 	fflush(stdout);
 	memset(buff3,0,FIELDLENGTH +1);
@@ -111,19 +124,19 @@ int main(int argc, char ** argv){
 	//receber e armazenar dados recebidos
 	char buff[PINGSIZE]={0};
 	
-        receiveServerPing(buff,PINGSIZE);
+        receiveWholeServerPing(buff,PINGSIZE);
 	send(client_socket,buff,PINGSIZE,0);
         sscanf(buff,"%lu",&dataSize);
 	printf("Tamanhos:\ndados: %lu\n",dataSize);
 	loginScreen();
 	memset(buff,0,PINGSIZE);
-	receiveServerPing(buff,PINGSIZE);
+	receiveWholeServerPing(buff,PINGSIZE);
         printf("%s\n",buff);
 	//R S
 	while(1){
 		char buff[PINGSIZE];
 		memset(buff,0,PINGSIZE);
-		int64_t status=receiveServerPing(buff,PINGSIZE);
+		int status=receiveWholeServerPing(buff,PINGSIZE);
 		if(status<0){
 			raise(SIGINT);
 		}
@@ -137,14 +150,8 @@ int main(int argc, char ** argv){
 
 		char message[dataSize];
 		memset(message,0,dataSize);
-	int64_t len=0;
-	int64_t total=0;
-for (; total<dataSize;) { /* Watch out for buffer overflow */
-     	total+=len=receiveServerPing(message+total,dataSize-total);
-	
-}
-	send(client_socket,pingCorrect,strlen(pingCorrect),0);
-	
+	int total= receiveWholeServerPing(message,dataSize);
+		send(client_socket,pingCorrect,strlen(pingCorrect),0);
 		if(total<0){
 			raise(SIGINT);
 		}
