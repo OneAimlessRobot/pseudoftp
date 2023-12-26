@@ -31,6 +31,13 @@ static pthread_t connectionAccepter,dataSender,graphics,rateInfoUpdater,clientKi
 
 
 
+void sigpipe_handler(int signal){
+
+
+
+
+}
+
 void cleanup(void){
 	
 	pthread_join(rateInfoUpdater,NULL);
@@ -376,7 +383,7 @@ void initEverything(u_int16_t port,char*pathToFile,u_int64_t startDataSize,u_int
 	//especificar socket;
 	fcntl(state->server_socket,F_SETFD,O_ASYNC);
 	signal(SIGINT,sigint_handler);
-	
+	signal(SIGPIPE,sigpipe_handler);
 	state->server_address.sin_family=AF_INET;
 	state->server_address.sin_port= htons(port);
 		

@@ -5,7 +5,7 @@ static u_int64_t dataSize;
 const char* pingCorrect="queroja";
 
 #define MAXNUMBEROFTRIES 10
-#define MAXTIMEOUTSECS 100
+#define MAXTIMEOUTSECS 1
 #define LINESIZE 1024
 #define MAXTIMEOUTUSECS 0
 #define PINGSIZE 50
@@ -122,7 +122,7 @@ int main(int argc, char ** argv){
         sscanf(buff,"%lu",&dataSize);
 
         printf("Tamanhos:\ndados: %lu\n",dataSize);
-
+	send(client_socket,buff,PINGSIZE,0);
 
 	loginScreen();	
 	char buff3[1024]={0};

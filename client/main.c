@@ -35,7 +35,9 @@ static int receiveWholeServerPing(char message[],u_int64_t size){
 
 for (; total<size;) { /* Watch out for buffer overflow */
      	total+=len=receiveServerPing(message+total,size-total);
-	
+	if(len<0){
+		break;
+	}
 }
 	return total;
 
@@ -65,9 +67,10 @@ void loginScreen(){
 }
 void sigpipe_handler(int signal){
 
-
-
-
+	close(client_socket);
+	close(fd);
+	printf("pipepartido!!!!\n");
+	//exit(-1);
 }
 void sigint_handler(int signal){
 
@@ -96,7 +99,7 @@ int main(int argc, char ** argv){
 		return 0;
 	}
 	signal(SIGINT,sigint_handler);
-	signal(SIGPIPE,sigint_handler);
+	signal(SIGPIPE,sigpipe_handler);
 	struct sockaddr_in server_address;
 	server_address.sin_family=AF_INET;
 	server_address.sin_port= htons(atoi(argv[2]));

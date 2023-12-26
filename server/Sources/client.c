@@ -29,6 +29,9 @@ int receiveWholeClientPing(clientStruct*client,char message[],u_int64_t size){
 
 for (; total<size;) { /* Watch out for buffer overflow */
         total+=len=receiveClientPing(client,message+total,size-total);
+	if(len<0){
+                break;
+        }
 
 }
         return total;
