@@ -30,18 +30,6 @@ pthread_cond_t kickingCond= PTHREAD_COND_INITIALIZER;
 static pthread_t connectionAccepter,dataSender,graphics,rateInfoUpdater,clientKicker,serverLogWritter;
 
 
-static int receiveWholeClientPing(clientStruct*client,char message[],u_int64_t size){
-                int counter=0;
-        int64_t len=0;
-        int64_t total=0;
-
-for (; total<size;) { /* Watch out for buffer overflow */
-        total+=len=receiveClientPing(client,message+total,size-total);
-
-}
-        return total;
-
-}
 
 void cleanup(void){
 	
@@ -177,7 +165,7 @@ static void* dataSending(void* argStruct){
 			snprintf(buff3,LOGMSGLENGTH,"Sending chunk of data to %s!!!!",inet_ntoa(nextClient->clientAddress.sin_addr));
 			pushLog(buff3);
 			int numSent=send(client_socket,message,numRead,0);
-			receiveClientPing(nextClient,pingCorrect,strlen(pingCorrect));
+			receiveWholeClientPing(nextClient,pingCorrect,strlen(pingCorrect));
 			
 			
 			

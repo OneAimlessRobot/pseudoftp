@@ -138,6 +138,7 @@ int main(int argc, char ** argv){
 		memset(buff,0,PINGSIZE);
 		int status=receiveWholeServerPing(buff,PINGSIZE);
 		if(status<0){
+			printf("O client vai sair porque n recebeu um ping inteiro!!!!\n");
 			raise(SIGINT);
 		}
 		sscanf(buff,"%lu",&dataSize);
@@ -146,18 +147,17 @@ int main(int argc, char ** argv){
 		printf("Tamanhos:\ndados: %lu\n",dataSize);
 	
 	
-		int counter=0;
-
 		char message[dataSize];
 		memset(message,0,dataSize);
 	int total= receiveWholeServerPing(message,dataSize);
 		send(client_socket,pingCorrect,strlen(pingCorrect),0);
 		if(total<0){
+			printf("O client vai sair porque n recebeu um chunk inteiro!!!!\n");
 			raise(SIGINT);
 		}
 		//system("clear");
-		counter+=status=write(fd,message,total);
-		printf("Received chunk of data with size %ld from %s\n\nWritting....to here:%s\n",counter,inet_ntoa(server_address.sin_addr),argv[1]);
+		status=write(fd,message,total);
+		printf("Received chunk of data with size %d from %s\n\nWritting....to here:%s\n",status,inet_ntoa(server_address.sin_addr),argv[1]);
 
 //		printf("Recebidos: %d \n",counter);
 		if(!status){

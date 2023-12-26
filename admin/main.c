@@ -28,13 +28,26 @@ static int64_t receiveServerOutput(char buff[],u_int64_t size){
 		return -1;
 }
 
+static int receiveWholeServerOutput(char message[],u_int64_t size){
+                int counter=0;
+        int64_t len=0;
+        int64_t total=0;
+
+for (; total<size;) { /* Watch out for buffer overflow */
+        total+=len=receiveServerOutput(message+total,size-total);
+
+}
+        return total;
+
+}
+
 void loginScreen(){
  
  	char userPrompt[FIELDLENGTH+1];
         char buff3[FIELDLENGTH +1];
 
         memset(userPrompt,0,FIELDLENGTH+1);
-        receiveServerOutput(userPrompt,FIELDLENGTH+1);
+        receiveWholeServerOutput(userPrompt,FIELDLENGTH+1);
         printf("%s",userPrompt);
         fflush(stdout);
         memset(buff3,0,FIELDLENGTH +1);
@@ -42,7 +55,7 @@ void loginScreen(){
         send(client_socket,buff3,FIELDLENGTH +1,0);
 
         memset(userPrompt,0,FIELDLENGTH+1);
-        receiveServerOutput(userPrompt,FIELDLENGTH+1);
+        receiveWholeServerOutput(userPrompt,FIELDLENGTH+1);
         printf("%s",userPrompt);
         fflush(stdout);
         memset(buff3,0,FIELDLENGTH +1);
@@ -105,7 +118,7 @@ int main(int argc, char ** argv){
 	//receber e armazenar dados recebidos
         
 	char buff[PINGSIZE];
-	recv(client_socket,buff,PINGSIZE,0);
+	receiveWholeServerOutput(buff,PINGSIZE);
         sscanf(buff,"%lu",&dataSize);
 
         printf("Tamanhos:\ndados: %lu\n",dataSize);
@@ -113,7 +126,7 @@ int main(int argc, char ** argv){
 
 	loginScreen();	
 	char buff3[1024]={0};
-	recv(client_socket,buff3,1024,0);
+	receiveWholeServerOutput(buff3,1024);
 	printf("%s\n",buff3);
 	fflush(stdout);
 	while(1){
@@ -126,7 +139,7 @@ int main(int argc, char ** argv){
 		fgets(buff,LINESIZE,stdin);
 		send(client_socket,buff,LINESIZE,0);
 		
-                int status=receiveServerOutput(buff,LINESIZE);
+                int status=receiveWholeServerOutput(buff,LINESIZE);
                 if(status<0||!strncmp(buff,"die",LINESIZE)){
                         raise(SIGINT);
                 }
