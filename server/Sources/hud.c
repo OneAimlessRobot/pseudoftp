@@ -17,43 +17,54 @@ static void formatCurrTime(char buff[LOGMSGLENGTH]){
 
 }
 void printClientsOfState(char buff[LOGMSGLENGTH*20]){
+	dliterator* it=initIt((DListW*) acessListMtx(&listMtx,state->listOfClients,0,0,5));
 	
 	char* curr=buff;
-	for(u_int64_t i=0;i<acessVarMtx(&varMtx,&state->clientsActive,0,-1);i++){
-		
-		clientStruct* currClient=(clientStruct*)acessListMtx(&listMtx,state->listOfClients,0,i,2);
-		
-		curr+=snprintf(curr,LOGMSGLENGTH*10,"Client number %lu: %s\nLogin: %s\nLiga-nos da porta: %d\nTem numero de socket: %d\nJa recebeu %lu bytes:\nJa foi despachado???????%lu\n",i,inet_ntoa(currClient->clientAddress.sin_addr),currClient->login,(int) ntohs(currClient->clientAddress.sin_port),(int32_t)acessVarMtx(&varMtx,&currClient->client_socket,0,-1),acessVarMtx(&varMtx,&currClient->numOfBytesSent,0,-1),acessVarMtx(&varMtx,&currClient->done,0,-1));
-	}
-}	
+	while(acessItMtx(&listMtx,it,1)){
 
+		clientStruct* currClient=(clientStruct*) acessItMtx(&listMtx,it,0);
+		curr+=snprintf(curr,LOGMSGLENGTH*10,"Client number %s\nLogin: %s\nLiga-nos da porta: %d\nTem numero de socket: %d\nJa recebeu %lu bytes:\nJa foi despachado???????%lu\n",inet_ntoa(currClient->clientAddress.sin_addr),currClient->login,(int) ntohs(currClient->clientAddress.sin_port),(int)acessVarMtx(&varMtx,&currClient->client_socket,0,-1),acessVarMtx(&varMtx,&currClient->numOfBytesSent,0,-1),acessVarMtx(&varMtx,&currClient->done,0,-1));
+	}
+
+}
 void printAdminsOfState(char buff[LOGMSGLENGTH*20]){
-	
+	dliterator* it=initIt((DListW*) acessListMtx(&listMtx,state->listOfAdmins,0,0,5));
 	char* curr=buff;
-	for(u_int64_t i=0;i<*(u_int64_t*)acessListMtx(&listMtx,state->listOfAdmins,0,0,4);i++){
-		
-		clientStruct* currClient=(clientStruct*)acessListMtx(&listMtx,state->listOfAdmins,0,i,2);
-		curr+=snprintf(curr,LOGMSGLENGTH,"Admin number %lu: %s.\nLiga-nos da porta: %d\nTem numero de socket: %d\n\n",i,inet_ntoa(currClient->clientAddress.sin_addr),(int) ntohs(currClient->clientAddress.sin_port),(int32_t)acessVarMtx(&varMtx,&currClient->client_socket,0,-1));
-		
+	while(acessItMtx(&listMtx,it,1)){
+
+		clientStruct* currClient=(clientStruct*) acessItMtx(&listMtx,it,0);
+		curr+=snprintf(curr,LOGMSGLENGTH,"Admin %s.\nLiga-nos da porta: %d\nTem numero de socket: %d\n\n",inet_ntoa(currClient->clientAddress.sin_addr),(int) ntohs(currClient->clientAddress.sin_port),(int32_t)acessVarMtx(&varMtx,&currClient->client_socket,0,-1));
+
 	}
-}	
+}
+/*
+case 0:
+	result= nextIt(it);
+	break;
+	case 1:
+	result= hasNextIt(it);
+	break;
+	case 2:
+	rewindIt(it);
+
+*/
 static void printClientsOfStateStream(void){
-	
-	for(u_int64_t i=0;i<acessVarMtx(&varMtx,&state->clientsActive,0,-1);i++){
-		
-		clientStruct* currClient=(clientStruct*)acessListMtx(&listMtx,state->listOfClients,0,i,2);
-		
-		printw("Client number %lu: %s\nLogin: %s\nLiga-nos da porta: %d\nTem numero de socket: %d\nJa recebeu %lu bytes:\nJa foi despachado???????%lu\n",i,inet_ntoa(currClient->clientAddress.sin_addr),currClient->login,(int) ntohs(currClient->clientAddress.sin_port),(int32_t)acessVarMtx(&varMtx,&currClient->client_socket,0,-1),acessVarMtx(&varMtx,&currClient->numOfBytesSent,0,-1),acessVarMtx(&varMtx,&currClient->done,0,-1));
+	dliterator* it=initIt((DListW*) acessListMtx(&listMtx,state->listOfClients,0,0,5));
+	while(acessItMtx(&listMtx,it,1)){
+
+		clientStruct* currClient=(clientStruct*) acessItMtx(&listMtx,it,0);
+		printw("Client  %s\nLogin: %s\nLiga-nos da porta: %d\nTem numero de socket: %d\nJa recebeu %lu bytes:\nJa foi despachado???????%lu\n",inet_ntoa(currClient->clientAddress.sin_addr),currClient->login,(int) ntohs(currClient->clientAddress.sin_port),(int32_t)acessVarMtx(&varMtx,&currClient->client_socket,0,-1),acessVarMtx(&varMtx,&currClient->numOfBytesSent,0,-1),acessVarMtx(&varMtx,&currClient->done,0,-1));
 	}
-}	
+}
 static void printAdminsOfStateStream(void){
-	
-	for(u_int64_t i=0;i<acessVarMtx(&varMtx,&state->adminsActive,0,-1);i++){
-		
-		clientStruct* currClient=(clientStruct*)acessListMtx(&listMtx,state->listOfAdmins,0,i,2);
-		printw("Admin number %lu: %s.\nLiga-nos da porta: %d\nTem numero de socket: %d\n\n",i,inet_ntoa(currClient->clientAddress.sin_addr),(int) ntohs(currClient->clientAddress.sin_port),(int32_t)acessVarMtx(&varMtx,&currClient->client_socket,0,-1));
-	}	
-}	
+
+	dliterator* it=initIt((DListW*) acessListMtx(&listMtx,state->listOfAdmins,0,0,5));
+	while(acessItMtx(&listMtx,it,1)){
+
+		clientStruct* currClient=(clientStruct*) acessItMtx(&listMtx,it,0);
+		printw("Admin  %s.\nLiga-nos da porta: %d\nTem numero de socket: %d\n\n",inet_ntoa(currClient->clientAddress.sin_addr),(int) ntohs(currClient->clientAddress.sin_port),(int32_t)acessVarMtx(&varMtx,&currClient->client_socket,0,-1));
+	}
+}
 
 void printServerState(void){
 	

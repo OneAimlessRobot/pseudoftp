@@ -155,23 +155,21 @@ static void* enqueueCmds(void* argStruct){
 
 static void* dataSending(void* argStruct){
 	clientStruct* nextClient= (clientStruct*) argStruct;
-	int fd=acessVarMtx(&varMtx,&nextClient->fd,0,-1);
-	u_int64_t dataSize=acessVarMtx(&varMtx,&state->dataSize,0,-1);
-	char message[dataSize];
-	memset(message,0,dataSize);
-	int client_socket=acessVarMtx(&varMtx,&nextClient->client_socket,0,-1);
-	u_int64_t client_total=acessVarMtx(&varMtx,&nextClient->bytesToRead,0,-1);
-
-	while(acessVarMtx(&varMtx,&state->serverRunning,0,-1)&&!acessVarMtx(&varMtx,&nextClient->done,0,-1)){
 	
-	int numRead=read(fd,message,dataSize);
-	int toSend=notifyClientAboutSizes(nextClient,numRead);
-	//s r	
+	u_int64_t dataSize=acessVarMtx(&varMtx,&state->dataSize,0,-1),
+		client_total=nextClient->bytesToRead;
+	char message[dataSize],
+		buff3[LOGMSGLENGTH]={0},
+		pingBuff[PINGSIZE]={0};
+	int client_socket=nextClient->client_socket,
+			fd=nextClient->fd;
+	while(acessVarMtx(&varMtx,&state->serverRunning,0,-1)&&!nextClient->done){
+	
+	int numRead=read(fd,message,dataSize),
+		toSend=notifyClientAboutSizes(nextClient,numRead);
 	if(toSend>0){
-			char buff3[LOGMSGLENGTH]={0};
 			snprintf(buff3,LOGMSGLENGTH,"Sending chunk of data to %s!!!!",inet_ntoa(nextClient->clientAddress.sin_addr));
 			pushLog(buff3);
-			char pingBuff[PINGSIZE]={0};
 			send(client_socket,message,numRead,0);
 			receiveWholeClientPing(nextClient,pingBuff,PINGSIZE);
 			int numSent=-1;
@@ -180,66 +178,56 @@ static void* dataSending(void* argStruct){
 			
 			
 		acessVarMtx(&varMtx,&state->totalSent,numSent,3);
-		u_int64_t clientCurrTotal=acessVarMtx(&varMtx,&nextClient->numOfBytesSent,numSent,3);
-		u_int64_t clientGoal=acessVarMtx(&varMtx,&nextClient->bytesToRead,0,-1);
-		if(clientCurrTotal==clientGoal){
+		u_int64_t clientCurrTotal=nextClient->numOfBytesSent+=numSent;
+		if(clientCurrTotal==client_total){
 		
 			
-			acessVarMtx(&varMtx,&nextClient->done,1,0);
+			nextClient->done=1;
 			acessStackMtx(&stackMtx,state->kickedClients,nextClient,0);
 
 	}
 	}
 	else{
 		
-			acessVarMtx(&varMtx,&nextClient->done,1,0);
+			nextClient->done=1;
 			acessStackMtx(&stackMtx,state->kickedClients,nextClient,0);
 
 	}
+	memset(buff3,0,LOGMSGLENGTH);
 	}
 	pthread_cond_signal(&kickingCond);
 	
-
-	char buff5[LOGMSGLENGTH]={0};
-	snprintf(buff5,LOGMSGLENGTH,"Tudo enviado!!!!");
-	pushLog(buff5);
+	snprintf(buff3,LOGMSGLENGTH,"Tudo enviado!!!!");
+	pushLog(buff3);
 	return NULL;
 }
 static int processClientInfo(clientStruct* currClient){
-//printf("cheguei!!!\n");
 u_int64_t dataSize=acessVarMtx(&varMtx,&state->dataSize,0,-1);
-char ping[PINGSIZE];
-char userPrompt[FIELDLENGTH+1];
-char passPrompt[FIELDLENGTH+1];
-//printf("cheguei!!!\n");
-memset(ping,0,PINGSIZE);
-memset(userPrompt,0,FIELDLENGTH+1);
-memset(passPrompt,0,FIELDLENGTH+1);
-int client_socket=(int)acessVarMtx(&varMtx,&currClient->client_socket,0,-1);
-int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
+char ping[PINGSIZE]={0},
+	userPrompt[FIELDLENGTH+1]={0},
+	passPrompt[FIELDLENGTH+1]={0},
+	strcpy(userPrompt,userNamePrompt);
+	strcpy(passPrompt,passWordPrompt);
+	buff3[LOGMSGLENGTH]={0};
+	loginStruct login,*storedClient;
+	memset(login.user,0,FIELDLENGTH+1);
+	memset(login.password,0,FIELDLENGTH+1);
+				
+		int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
 		snprintf(ping,PINGSIZE,"%lu", dataSize);
-		//printf("%s\n",ping);
-		strcpy(userPrompt,userNamePrompt);
-		strcpy(passPrompt,passWordPrompt);
-		send(client_socket,ping,PINGSIZE,0);
+		send(currClient->client_socket,ping,PINGSIZE,0);
 		memset(ping,0,PINGSIZE);
 		receiveWholeClientPing(currClient,ping,PINGSIZE);
-		//printf("cheguei!!! O tamanho de ping do cliente é:%s\n",ping);
-		char buff3[LOGMSGLENGTH]={0};
+		memset(buff3,0,LOGMSGLENGTH);
 		snprintf(buff3,LOGMSGLENGTH,"client got the sizes!!!!!!!");
 		pushLog(buff3);
-		loginStruct login,*storedClient;
-		memset(login.user,0,FIELDLENGTH+1);
-		memset(login.password,0,FIELDLENGTH+1);
-		send(client_socket,userPrompt,FIELDLENGTH+1,0);
+		send(currClient->client_socket,userPrompt,FIELDLENGTH+1,0);
 		receiveWholeClientPing(currClient,login.user,FIELDLENGTH+1);
-		send(client_socket,passPrompt,FIELDLENGTH+1,0);
+		send(currClient->client_socket,passPrompt,FIELDLENGTH+1,0);
 		receiveWholeClientPing(currClient,login.password,FIELDLENGTH+1);
-		//s r
-//printf("cheguei!!!\n");
+		memset(buff3,0,LOGMSGLENGTH);
 		if((storedClient=(loginStruct*)getHTElemComp(loadedLogins,&login))){
-			
-			
+
 			if(!strncmp(login.password,storedClient->password,PINGSIZE)){
 			int size=lseek(fd,0,SEEK_END);
 			lseek(fd,0,SEEK_SET);
@@ -249,51 +237,48 @@ int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
 			strncpy(currClient->login,storedClient->user,FIELDLENGTH);
 			acessVarMtx(&varMtx,&state->clientsActive,0,1);
 			acessListMtx(&listMtx,state->listOfClients,currClient,0,0);
-			char buff[PINGSIZE];
-			memset(buff,0,PINGSIZE);
-			snprintf(buff,PINGSIZE,"Bem vindo, %s!\n",login.user);
-			send(client_socket,buff,PINGSIZE,0);
+			memset(ping,0,PINGSIZE);
+			snprintf(ping,PINGSIZE,"Bem vindo, %s!\n",login.user);
+			send(currClient->client_socket,ping,PINGSIZE,0);
 			pthread_create(&currClient->threadid,NULL,dataSending,currClient);
 			return 1;
 			}
 			else{
 			
-			char buff3[LOGMSGLENGTH]={0};
 			snprintf(buff3,LOGMSGLENGTH,"client kicked!!!!!!!! Credentials incorrect... No one with username %s and password %s exists!!!!\n(O user %s tem password %s)\n",login.user,login.password,login.user,storedClient->password);
 			pushLog(buff3);
-			close(client_socket);
+			close(currClient->client_socket);
 			return 0;
 			}
 			
 		}
 		else if(!strncmp(login.user,pingAdmin,strlen(pingAdmin))){
 			
-			char buff3[LOGMSGLENGTH]={0};
 			snprintf(buff3,LOGMSGLENGTH,"client got the sizes!!!!!!!");
 			pushLog(buff3);
-			char buff4[LOGMSGLENGTH]={0};
-			snprintf(buff4,LOGMSGLENGTH,"ADMIN HAS JOINED!!!!!");
-			pushLog(buff4);
-			memset(currClient->login,0,FIELDLENGTH+1);
+			memset(buff3,0,LOGMSGLENGTH);
+			snprintf(buff3,LOGMSGLENGTH,"ADMIN HAS JOINED!!!!!");
+			pushLog(buff3);
 			acessVarMtx(&varMtx,&currClient->isAdmin,1,0);
 			strncpy(currClient->login,pingAdmin,FIELDLENGTH);
 			acessVarMtx(&varMtx,&state->adminsActive,0,1);
 			acessListMtx(&listMtx,state->listOfAdmins,currClient,0,0);
-			send(client_socket,welcomeAdmin,LINESIZE,0);
+			send(currClient->client_socket,welcomeAdmin,LINESIZE,0);
 			pthread_create(&currClient->threadid,NULL,enqueueCmds,currClient);
 			return 2;
 		}
 		else{
 
-			char buff3[LOGMSGLENGTH]={0};
 			snprintf(buff3,LOGMSGLENGTH,"client kicked!!!!!!!! Credentials given were %s and password %s\n",login.user,login.password,strlen(login.user));
 			pushLog(buff3);
-			close(client_socket);
+			close(currClient->client_socket);
 			return 0;
 		}
 
 }
 static void* connectionAccepting(void* argStruct){
+	char buff[LOGMSGLENGTH]={0};
+			
 	while(acessVarMtx(&varMtx,&state->serverRunning,0,-1)){
 	
 
@@ -323,24 +308,24 @@ static void* connectionAccepting(void* argStruct){
 		iResult=select(state->server_socket+1,&rfds,(fd_set*)0,(fd_set*)0,&tv);
 		if(iResult>0){
 		clientStruct currClient;
-		memset(&currClient,0,sizeof(clientStruct));
-		memset(&currClient.clientAddress,0,sizeof(struct sockaddr));
-		memset(&currClient.addrLength,0,sizeof(socklen_t));
+		//memset(&currClient,0,sizeof(clientStruct));
+		//memset(&currClient.clientAddress,0,sizeof(struct sockaddr));
+		//memset(&currClient.addrLength,0,sizeof(socklen_t));
+		memset(currClient.login,0,FIELDLENGTH+1);
 		currClient.numOfBytesSent=0;
 		currClient.done=0;
 		currClient.isAdmin=0;
 		currClient.client_socket=accept(state->server_socket,(struct sockaddr*)&(currClient.clientAddress),&(currClient.addrLength));
+		memset(buff,0,LOGMSGLENGTH);
 		if((currClient.fd=open((char*)acessVarMtx(&varMtx,&state->pathToFile,0,-1),O_RDONLY,0666))<0){
 
-			char buff[LOGMSGLENGTH]={0};
-			snprintf(buff,LOGMSGLENGTH,"Accepted connection from %s, mas ficheiro %s e invalido. Conexao sera largada...",inet_ntoa(currClient.clientAddress.sin_addr),acessVarMtx(&varMtx,&state->pathToFile,0,-1));
+			snprintf(buff,LOGMSGLENGTH,"Accepted connection from %s, mas ficheiro %s e invalido. Conexao sera largada...",inet_ntoa(currClient.clientAddress.sin_addr),(char*)acessVarMtx(&varMtx,&state->pathToFile,0,-1));
 			pushLog(buff);
 			perror("Nao foi possivel abrir nada!!!!\n");
 			close(currClient.client_socket);
 		
 		}
 		else{
-			char buff[LOGMSGLENGTH]={0};
 			snprintf(buff,LOGMSGLENGTH,"Accepted connection from %s",inet_ntoa(currClient.clientAddress.sin_addr));
 			pushLog(buff);
 			processClientInfo(&currClient);
@@ -349,7 +334,6 @@ static void* connectionAccepting(void* argStruct){
 			
 		}
 		else{
-			char buff[LOGMSGLENGTH]={0};
 			snprintf(buff,LOGMSGLENGTH,"Timed out!!!!!( more that %ds waiting). Trying again...",MAXTIMEOUTCONSECS);
 			pushLog(buff);
 		}
@@ -384,7 +368,7 @@ void initEverything(u_int16_t port,char*pathToFile,u_int64_t startDataSize,u_int
 	}
 	
 	//especificar socket;
-	//fcntl(state->server_socket,F_SETFD,O_ASYNC);
+	fcntl(state->server_socket,F_SETFD,O_ASYNC);
 	signal(SIGINT,sigint_handler);
 	signal(SIGPIPE,sigint_handler);
 	state->server_address.sin_family=AF_INET;

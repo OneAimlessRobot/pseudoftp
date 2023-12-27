@@ -26,7 +26,7 @@ dliterator* initIt(DListW* list){
 }
 void* hasNextIt(dliterator*it){
 
-	printf("No: %p\n",it->nextNode);
+	//printf("No: %p\n",it->nextNode);
 	return it->nextNode;
 
 }
