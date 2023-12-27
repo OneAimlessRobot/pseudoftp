@@ -171,8 +171,11 @@ static void* dataSending(void* argStruct){
 			char buff3[LOGMSGLENGTH]={0};
 			snprintf(buff3,LOGMSGLENGTH,"Sending chunk of data to %s!!!!",inet_ntoa(nextClient->clientAddress.sin_addr));
 			pushLog(buff3);
-			int numSent=send(client_socket,message,numRead,0);
-			receiveWholeClientPing(nextClient,pingCorrect,strlen(pingCorrect));
+			char pingBuff[PINGSIZE]={0};
+			send(client_socket,message,numRead,0);
+			receiveWholeClientPing(nextClient,pingBuff,PINGSIZE);
+			int numSent=-1;
+			sscanf(pingBuff,"%d",&numSent);
 			
 			
 			
@@ -381,9 +384,9 @@ void initEverything(u_int16_t port,char*pathToFile,u_int64_t startDataSize,u_int
 	}
 	
 	//especificar socket;
-	//fcntl(state->server_socket,F_SETFD,O_NONBLOCK);
+	//fcntl(state->server_socket,F_SETFD,O_ASYNC);
 	signal(SIGINT,sigint_handler);
-	signal(SIGPIPE,sigpipe_handler);
+	signal(SIGPIPE,sigint_handler);
 	state->server_address.sin_family=AF_INET;
 	state->server_address.sin_port= htons(port);
 		

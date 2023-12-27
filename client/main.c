@@ -34,7 +34,7 @@ static int receiveWholeServerPing(char message[],u_int64_t size){
 	int64_t total=0;
 
 for (; total<size;) { /* Watch out for buffer overflow */
-     	total+=len=recv(client_socket,message+total,size-total,0);
+     	total+=len=receiveServerPing(message+total,size-total);
 	if(len<0){
 		break;
 	}
@@ -100,7 +100,7 @@ int main(int argc, char ** argv){
 		return 0;
 	}
 	signal(SIGINT,sigint_handler);
-	signal(SIGPIPE,sigpipe_handler);
+	signal(SIGPIPE,sigint_handler);
 	struct sockaddr_in server_address;
 	server_address.sin_family=AF_INET;
 	server_address.sin_port= htons(atoi(argv[2]));
@@ -139,7 +139,9 @@ int main(int argc, char ** argv){
 	//R S
 	while(1){
 		char buff[PINGSIZE];
+		char pingBuff[PINGSIZE];
 		memset(buff,0,PINGSIZE);
+		memset(pingBuff,0,PINGSIZE);
 		int status=receiveWholeServerPing(buff,PINGSIZE);
 		if(status<0){
 			printf("O client vai sair porque n recebeu um ping inteiro!!!!\n");
@@ -154,7 +156,6 @@ int main(int argc, char ** argv){
 		char message[dataSize];
 		memset(message,0,dataSize);
 	int total= receiveWholeServerPing(message,dataSize);
-		send(client_socket,pingCorrect,strlen(pingCorrect),0);
 		if(total<0){
 			printf("O client vai sair porque n recebeu um chunk inteiro!!!!\n");
 			raise(SIGINT);
@@ -171,6 +172,8 @@ int main(int argc, char ** argv){
 			perror("No bytes written!!!! An error happened\n");
 		}
 		printf("Done!!!!!\n");
+		snprintf(pingBuff,PINGSIZE,"%d",status);
+		send(client_socket,pingBuff,PINGSIZE,0);
 		
 	}
 
