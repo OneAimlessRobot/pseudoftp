@@ -206,13 +206,14 @@ u_int64_t dataSize=acessVarMtx(&varMtx,&state->dataSize,0,-1);
 char ping[PINGSIZE]={0},
 	userPrompt[FIELDLENGTH+1]={0},
 	passPrompt[FIELDLENGTH+1]={0},
-	strcpy(userPrompt,userNamePrompt);
-	strcpy(passPrompt,passWordPrompt);
 	buff3[LOGMSGLENGTH]={0};
 	loginStruct login,*storedClient;
 	memset(login.user,0,FIELDLENGTH+1);
 	memset(login.password,0,FIELDLENGTH+1);
 				
+	strcpy(userPrompt,userNamePrompt);
+	strcpy(passPrompt,passWordPrompt);
+
 		int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
 		snprintf(ping,PINGSIZE,"%lu", dataSize);
 		send(currClient->client_socket,ping,PINGSIZE,0);
