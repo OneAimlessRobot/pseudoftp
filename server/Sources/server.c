@@ -215,13 +215,13 @@ memset(passPrompt,0,FIELDLENGTH+1);
 int client_socket=(int)acessVarMtx(&varMtx,&currClient->client_socket,0,-1);
 int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
 		snprintf(ping,PINGSIZE,"%lu", dataSize);
-		printf("%s\n",ping);
+		//printf("%s\n",ping);
 		strcpy(userPrompt,userNamePrompt);
 		strcpy(passPrompt,passWordPrompt);
 		send(client_socket,ping,PINGSIZE,0);
 		memset(ping,0,PINGSIZE);
 		receiveWholeClientPing(currClient,ping,PINGSIZE);
-		printf("cheguei!!! O tamanho de ping do cliente é:%s\n",ping);
+		//printf("cheguei!!! O tamanho de ping do cliente é:%s\n",ping);
 		char buff3[LOGMSGLENGTH]={0};
 		snprintf(buff3,LOGMSGLENGTH,"client got the sizes!!!!!!!");
 		pushLog(buff3);
@@ -314,8 +314,8 @@ static void* connectionAccepting(void* argStruct){
 		fd_set rfds;
 		FD_ZERO(&rfds);
 		FD_SET(state->server_socket,&rfds);
-		tv.tv_sec=MAXTIMEOUTSECS;
-		tv.tv_usec=MAXTIMEOUTUSECS;
+		tv.tv_sec=MAXTIMEOUTCONSECS;
+		tv.tv_usec=MAXTIMEOUTCONUSECS;
 		pushLog("A espera de conexoes!!!");
 		iResult=select(state->server_socket+1,&rfds,(fd_set*)0,(fd_set*)0,&tv);
 		if(iResult>0){
@@ -347,7 +347,7 @@ static void* connectionAccepting(void* argStruct){
 		}
 		else{
 			char buff[LOGMSGLENGTH]={0};
-			snprintf(buff,LOGMSGLENGTH,"Timed out!!!!!( more that %ds waiting). Trying again...",MAXTIMEOUTSECS);
+			snprintf(buff,LOGMSGLENGTH,"Timed out!!!!!( more that %ds waiting). Trying again...",MAXTIMEOUTCONSECS);
 			pushLog(buff);
 		}
 	}
@@ -381,7 +381,7 @@ void initEverything(u_int16_t port,char*pathToFile,u_int64_t startDataSize,u_int
 	}
 	
 	//especificar socket;
-	fcntl(state->server_socket,F_SETFD,O_ASYNC);
+	//fcntl(state->server_socket,F_SETFD,O_NONBLOCK);
 	signal(SIGINT,sigint_handler);
 	signal(SIGPIPE,sigpipe_handler);
 	state->server_address.sin_family=AF_INET;

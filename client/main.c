@@ -3,7 +3,7 @@
 static u_int64_t dataSize;
 const char* pingCorrect="queroja";
 #define MAXNUMBEROFTRIES 10
-#define MAXTIMEOUTSECS 1
+#define MAXTIMEOUTSECS 3
 #define MAXTIMEOUTUSECS 0
 #define FIELDLENGTH 127
 #define PINGSIZE 50
@@ -67,9 +67,7 @@ void loginScreen(){
 }
 void sigpipe_handler(int signal){
 
-	close(client_socket);
-	close(fd);
-	printf("pipepartido!!!!\n");
+	printf("%s\n",strerror(errno));
 	//exit(-1);
 }
 void sigint_handler(int signal){
@@ -153,7 +151,6 @@ int main(int argc, char ** argv){
 		char message[dataSize];
 		memset(message,0,dataSize);
 	int total= receiveWholeServerPing(message,dataSize);
-		send(client_socket,pingCorrect,strlen(pingCorrect),0);
 		if(total<0){
 			printf("O client vai sair porque n recebeu um chunk inteiro!!!!\n");
 			raise(SIGINT);
@@ -170,6 +167,7 @@ int main(int argc, char ** argv){
 			perror("No bytes written!!!! An error happened\n");
 		}
 		printf("Done!!!!!\n");
+		send(client_socket,pingCorrect,strlen(pingCorrect),0);
 		
 	}
 
