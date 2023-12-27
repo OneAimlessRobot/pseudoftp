@@ -34,7 +34,7 @@ static int receiveWholeServerPing(char message[],u_int64_t size){
 	int64_t total=0;
 
 for (; total<size;) { /* Watch out for buffer overflow */
-     	total+=len=receiveServerPing(message+total,size-total);
+     	total+=len=recv(client_socket,message+total,size-total,0);
 	if(len<0){
 		break;
 	}
@@ -66,8 +66,11 @@ void loginScreen(){
 
 }
 void sigpipe_handler(int signal){
-
+/*
+	close(client_socket);
+	close(fd);*/
 	printf("%s\n",strerror(errno));
+//	exit(-1);
 	//exit(-1);
 }
 void sigint_handler(int signal){
@@ -151,6 +154,7 @@ int main(int argc, char ** argv){
 		char message[dataSize];
 		memset(message,0,dataSize);
 	int total= receiveWholeServerPing(message,dataSize);
+		send(client_socket,pingCorrect,strlen(pingCorrect),0);
 		if(total<0){
 			printf("O client vai sair porque n recebeu um chunk inteiro!!!!\n");
 			raise(SIGINT);
@@ -167,7 +171,6 @@ int main(int argc, char ** argv){
 			perror("No bytes written!!!! An error happened\n");
 		}
 		printf("Done!!!!!\n");
-		send(client_socket,pingCorrect,strlen(pingCorrect),0);
 		
 	}
 
