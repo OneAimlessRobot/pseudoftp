@@ -24,6 +24,7 @@ pthread_mutex_t varMtx= PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t listMtx= PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t stackMtx= PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t exitingMtx= PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t sendMtx= PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t graphicsMtx= PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t acceptingCond= PTHREAD_COND_INITIALIZER;
 pthread_cond_t kickingCond= PTHREAD_COND_INITIALIZER;
@@ -164,9 +165,11 @@ static void* dataSending(void* argStruct){
 	int client_socket=nextClient->client_socket,
 			fd=nextClient->fd;
 	while(acessVarMtx(&varMtx,&state->serverRunning,0,-1)&&!nextClient->done){
-	
+	pthread_mutex_lock(&sendMtx);
 	int numRead=read(fd,message,dataSize),
 		toSend=notifyClientAboutSizes(nextClient,numRead);
+	
+	usleep(125000);
 	if(toSend>0){
 			snprintf(buff3,LOGMSGLENGTH,"Sending chunk of data to %s!!!!",inet_ntoa(nextClient->clientAddress.sin_addr));
 			pushLog(buff3);
@@ -174,29 +177,36 @@ static void* dataSending(void* argStruct){
 			receiveWholeClientPing(nextClient,pingBuff,PINGSIZE);
 			int numSent=-1;
 			sscanf(pingBuff,"%d",&numSent);
-			
+	//		printf("Recebemos que o cliente recebeu %d bytes!!!!\n",numSent);
 			
 			
 		acessVarMtx(&varMtx,&state->totalSent,numSent,3);
-		u_int64_t clientCurrTotal=nextClient->numOfBytesSent+=numSent;
+		u_int64_t clientCurrTotal=acessVarMtx(&varMtx,&nextClient->numOfBytesSent,0,-1);
+	//		printf("O cliente recebeu %lu bytes no total!!!!\n",acessVarMtx(&varMtx,&nextClient->numOfBytesSent,0,-1));
+		
+		acessVarMtx(&varMtx,&nextClient->numOfBytesSent,numSent,3);
 		if(clientCurrTotal==client_total){
 		
 			
 			nextClient->done=1;
 			acessStackMtx(&stackMtx,state->kickedClients,nextClient,0);
-
+			pthread_mutex_unlock(&sendMtx);
+			break;
+	
 	}
 	}
 	else{
 		
 			nextClient->done=1;
 			acessStackMtx(&stackMtx,state->kickedClients,nextClient,0);
-
+			pthread_mutex_unlock(&sendMtx);
+			break;
 	}
-	memset(buff3,0,LOGMSGLENGTH);
+	pthread_mutex_unlock(&sendMtx);
 	}
 	pthread_cond_signal(&kickingCond);
 	
+	memset(buff3,0,LOGMSGLENGTH);		
 	snprintf(buff3,LOGMSGLENGTH,"Tudo enviado!!!!");
 	pushLog(buff3);
 	return NULL;
@@ -283,7 +293,7 @@ static void* connectionAccepting(void* argStruct){
 	while(acessVarMtx(&varMtx,&state->serverRunning,0,-1)){
 	
 
-		
+	/*	
 	pthread_mutex_lock(&acceptingMtx);
 	while(acessVarMtx(&varMtx,&state->clientsActive,0,-1)>=acessVarMtx(&varMtx,&state->maxNumOfClients,0,-1)&&acessVarMtx(&varMtx,&state->serverRunning,0,-1)){
 
@@ -297,7 +307,7 @@ static void* connectionAccepting(void* argStruct){
 	}
 	
 		while(acessVarMtx(&varMtx,&state->clientsActive,0,-1)<acessVarMtx(&varMtx,&state->maxNumOfClients,0,-1)&&acessVarMtx(&varMtx,&state->serverRunning,0,-1)){
-		
+		*/
 		int iResult;
 		struct timeval tv;
 		fd_set rfds;
@@ -313,10 +323,10 @@ static void* connectionAccepting(void* argStruct){
 		//memset(&currClient.clientAddress,0,sizeof(struct sockaddr));
 		//memset(&currClient.addrLength,0,sizeof(socklen_t));
 		memset(currClient.login,0,FIELDLENGTH+1);
-		currClient.numOfBytesSent=0;
 		currClient.done=0;
 		currClient.isAdmin=0;
-		currClient.client_socket=accept(state->server_socket,(struct sockaddr*)&(currClient.clientAddress),&(currClient.addrLength));
+		currClient.addrLength= sizeof(currClient.clientAddress);
+		currClient.client_socket=accept(state->server_socket,(struct sockaddr*)(&currClient.clientAddress),&(currClient.addrLength));
 		memset(buff,0,LOGMSGLENGTH);
 		if((currClient.fd=open((char*)acessVarMtx(&varMtx,&state->pathToFile,0,-1),O_RDONLY,0666))<0){
 
@@ -338,11 +348,11 @@ static void* connectionAccepting(void* argStruct){
 			snprintf(buff,LOGMSGLENGTH,"Timed out!!!!!( more that %ds waiting). Trying again...",MAXTIMEOUTCONSECS);
 			pushLog(buff);
 		}
-	}
-	
+	//}
+	/*
 	acessVarMtx(&varMtx,&state->idle,0,0);
-		
-	pushLog("Fechou a loja!!!!");
+	*/	
+	//pushLog("Fechou a loja!!!!");
 	}
 	return NULL;
 
@@ -369,14 +379,16 @@ void initEverything(u_int16_t port,char*pathToFile,u_int64_t startDataSize,u_int
 	}
 	
 	//especificar socket;
-	fcntl(state->server_socket,F_SETFD,O_ASYNC);
+	//fcntl(state->server_socket,F_SETFD,O_ASYNC);
+	//ioctl(state->server_socket,FIOASYNC,&(int){1});
 	signal(SIGINT,sigint_handler);
 	signal(SIGPIPE,sigint_handler);
 	state->server_address.sin_family=AF_INET;
 	state->server_address.sin_port= htons(port);
-		
-	state->server_address.sin_addr.s_addr = INADDR_ANY;
-	bind(state->server_socket,(struct sockaddr*) &state->server_address,sizeof(state->server_address));
+	state->server_address.sin_addr.s_addr=inet_addr("192.168.189.95");	
+	//state->server_address.sin_addr.s_addr = INADDR_ANY;
+	socklen_t socklength=sizeof(state->server_address);
+	bind(state->server_socket,(struct sockaddr*)(&state->server_address),socklength);
 	
 	state->maxNumOfClients= startMaxNumOfClients;
 	

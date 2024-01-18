@@ -45,7 +45,7 @@ void setDataSize(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZ
 }
 
 void getPingSize(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZE]){
-
+-
 	snprintf(buff,LINESIZE,"Tamanho de ping: %hu bytes.\n",PINGSIZE);
           
 }

@@ -23,7 +23,12 @@ void printClientsOfState(char buff[LOGMSGLENGTH*20]){
 	while(acessItMtx(&listMtx,it,1)){
 
 		clientStruct* currClient=(clientStruct*) acessItMtx(&listMtx,it,0);
-		curr+=snprintf(curr,LOGMSGLENGTH*10,"Client number %s\nLogin: %s\nLiga-nos da porta: %d\nTem numero de socket: %d\nJa recebeu %lu bytes:\nJa foi despachado???????%lu\n",inet_ntoa(currClient->clientAddress.sin_addr),currClient->login,(int) ntohs(currClient->clientAddress.sin_port),(int)acessVarMtx(&varMtx,&currClient->client_socket,0,-1),acessVarMtx(&varMtx,&currClient->numOfBytesSent,0,-1),acessVarMtx(&varMtx,&currClient->done,0,-1));
+		curr+=snprintf(curr,LOGMSGLENGTH*10,"Client number %s\nLogin: %s\nLiga-nos da porta: %d\nTem numero de socket: %d\nJa recebeu %lu bytes:\nJa foi despachado???????%lu\n",
+				inet_ntoa(currClient->clientAddress.sin_addr),currClient->login,
+				(int) ntohs(currClient->clientAddress.sin_port),
+				(int)acessVarMtx(&varMtx,&currClient->client_socket,0,-1),
+				currClient->numOfBytesSent,
+				acessVarMtx(&varMtx,&currClient->done,0,-1));
 	}
 
 }
@@ -48,12 +53,19 @@ case 0:
 	rewindIt(it);
 
 */
-static void printClientsOfStateStream(void){
+void printClientsOfStateStream(void){
 	dliterator* it=initIt((DListW*) acessListMtx(&listMtx,state->listOfClients,0,0,5));
 	while(acessItMtx(&listMtx,it,1)){
 
 		clientStruct* currClient=(clientStruct*) acessItMtx(&listMtx,it,0);
-		printw("Client  %s\nLogin: %s\nLiga-nos da porta: %d\nTem numero de socket: %d\nJa recebeu %lu bytes:\nJa foi despachado???????%lu\n",inet_ntoa(currClient->clientAddress.sin_addr),currClient->login,(int) ntohs(currClient->clientAddress.sin_port),(int32_t)acessVarMtx(&varMtx,&currClient->client_socket,0,-1),acessVarMtx(&varMtx,&currClient->numOfBytesSent,0,-1),acessVarMtx(&varMtx,&currClient->done,0,-1));
+		printw("Client  %s\nLogin: %s\nLiga-nos da porta: %d\nTem numero de socket: %d\nNumero de fd: %d\nJa recebeu %lu bytes\nJa foi despachado? %lu\n",
+				inet_ntoa(currClient->clientAddress.sin_addr),
+				currClient->login,
+				(int) ntohs(currClient->clientAddress.sin_port),
+				currClient->fd,
+				(int32_t)acessVarMtx(&varMtx,&currClient->client_socket,0,-1),
+				currClient->numOfBytesSent,
+				acessVarMtx(&varMtx,&currClient->done,0,-1));
 	}
 }
 static void printAdminsOfStateStream(void){
