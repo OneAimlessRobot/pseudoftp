@@ -4,6 +4,7 @@
 
 extern pthread_mutex_t varMtx;
 extern pthread_mutex_t stackMtx;
+extern pthread_mutex_t queueMtx;
 
 extern serverState* state;
 
@@ -11,7 +12,7 @@ void pushLog(char* log){
 	
 	char buff[LOGMSGLENGTH]={0};
 	strncpy(buff,log,LOGMSGLENGTH);
-	acessStackMtx(&stackMtx,state->logs,buff,0);
+	acessQueueMtx(&queueMtx,state->logs,buff,0);
 
 
 }

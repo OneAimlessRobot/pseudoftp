@@ -47,7 +47,7 @@ int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
 		snprintf(ping,PINGSIZE,"%d", numRead);
 		send(client_socket,ping,PINGSIZE,0);
 		
-		int status=receiveWholeClientPing(currClient,ping,strlen(pingCorrect));
+		int status=receiveWholeClientPing(currClient,ping,PINGSIZE);
 		//printf("%d %hu\n",status,pingSize);
 		if(status>0){
 			if(!strncmp(ping,pingCorrect,strlen(pingCorrect))){

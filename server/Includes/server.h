@@ -9,7 +9,6 @@
 #define MAXTIMEOUTCONUSECS 0
 #define MAXTIMEOUTPING 20
 #define MAXTIMEOUTPINGU 0
-#define MAXIDLECLIENT 5
 #define MAX_CLIENTS_HARD_LIMIT 1000
 
 typedef struct serverState{
@@ -22,7 +21,8 @@ typedef struct serverState{
 	u_int64_t adminsActive,clientsActive,maxNumOfClients;
 	DListW* listOfClients;
 	DListW* listOfAdmins;
-	stackList* logs,*kickedClients;
+	stackList *kickedClients;
+	queueList* logs;
 	int server_socket;
 	struct sockaddr_in server_address;
 	u_int64_t totalSent;

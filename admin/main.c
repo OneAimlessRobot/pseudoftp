@@ -117,12 +117,6 @@ int main(int argc, char ** argv){
 	
 	//receber e armazenar dados recebidos
         
-	char buff[PINGSIZE];
-	receiveWholeServerOutput(buff,PINGSIZE);
-        sscanf(buff,"%lu",&dataSize);
-
-        printf("Tamanhos:\ndados: %lu\n",dataSize);
-	send(client_socket,buff,PINGSIZE,0);
 
 	loginScreen();	
 	char buff3[1024]={0};

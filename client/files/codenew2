@@ -1,0 +1,39 @@
+void EntityBox::cleanGrenades(){
+
+
+    std::list<Grenade*>::iterator it;
+    for (it = grenadeList.begin(); it != grenadeList.end();) {
+        if(!(*it)->isActive()){
+    delete (*it);
+    it=grenadeList.erase(it);
+    }
+    else{
+    ++it;
+
+    }
+
+
+
+}
+
+}
+
+void EntityBox::cleanMissiles(){
+
+    std::list<Missile*>::iterator it;
+    for (it = missileList.begin(); it != missileList.end();) {
+        if(!(*it)->isActive()){
+    delete (*it);
+    it=missileList.erase(it);
+    }
+    else{
+    ++it;
+
+    }
+
+
+
+}
+
+
+}

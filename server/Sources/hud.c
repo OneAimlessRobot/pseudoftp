@@ -3,6 +3,7 @@
 
 extern serverState* state;
 extern pthread_mutex_t stackMtx;
+extern pthread_mutex_t queueMtx;
 extern pthread_mutex_t varMtx;
 extern pthread_mutex_t listMtx;
 extern int logfd;
@@ -93,8 +94,8 @@ void printServerState(void){
 
 void printServerLogs(void){
 
-	while(*(u_int64_t*)acessStackMtx(&stackMtx,state->logs,0,3)){
-		char* buff=acessStackMtx(&stackMtx,state->logs,NULL,1);
+	while(*(u_int64_t*)acessQueueMtx(&queueMtx,state->logs,0,3)){
+		char* buff=acessStackMtx(&queueMtx,state->logs,NULL,1);
 		write(logfd,buff,min(LOGMSGLENGTH,strlen(buff)));
 		write(logfd,"\n",1);
 		free(buff);

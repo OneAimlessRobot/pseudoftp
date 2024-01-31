@@ -36,7 +36,7 @@ static int receiveWholeServerPing(char message[],u_int64_t size){
 for (; total<size;) { /* Watch out for buffer overflow */
      	total+=len=receiveServerPing(message+total,size-total);
 	if(len<0){
-		break;
+		raise(SIGINT);
 	}
 }
 	return total;
@@ -54,12 +54,13 @@ void loginScreen(){
 	scanf("%s",buff3);
         send(client_socket,buff3,FIELDLENGTH +1,0);
 	
-	memset(userPrompt,0,FIELDLENGTH+1);
-	receiveWholeServerPing(userPrompt,FIELDLENGTH+1);
-	printf("%s",userPrompt);
-	fflush(stdout);
-	memset(buff3,0,FIELDLENGTH +1);
-	scanf("%s",buff3);
+
+        memset(userPrompt,0,FIELDLENGTH+1);
+        receiveWholeServerPing(userPrompt,FIELDLENGTH+1);
+        printf("%s",userPrompt);
+        fflush(stdout);
+        memset(buff3,0,FIELDLENGTH +1);
+        scanf("%s",buff3);
         send(client_socket,buff3,FIELDLENGTH +1,0);
 	
 
@@ -75,7 +76,7 @@ void sigpipe_handler(int signal){
 }
 void sigint_handler(int signal){
 
-	close(client_socket);
+	//close(client_socket);
 	close(fd);
 	printf("cliente a fechar!!!\n");
 	exit(-1);
@@ -99,6 +100,8 @@ int main(int argc, char ** argv){
 		raise(SIGINT);
 		return 0;
 	}
+	//ioctl(client_socket,FIOASYNC,&(int){1});
+	//fcntl(client_socket,F_SETFD,O_NONBLOCK);
 	signal(SIGINT,sigint_handler);
 	signal(SIGPIPE,sigint_handler);
 	struct sockaddr_in server_address;
@@ -128,34 +131,37 @@ int main(int argc, char ** argv){
 	//receber e armazenar dados recebidos
 	char buff[PINGSIZE]={0};
 	
-        receiveWholeServerPing(buff,PINGSIZE);
-	send(client_socket,buff,PINGSIZE,0);
-        sscanf(buff,"%lu",&dataSize);
-	printf("Tamanhos:\ndados: %lu\n",dataSize);
+
 	loginScreen();
+
+        receiveWholeServerPing(buff,PINGSIZE);
+        sscanf(buff,"%lu",&dataSize);
+	printf("Tamanho de download; %lu bytes\n",dataSize);
+	send(client_socket,buff,PINGSIZE,0);
+
 	memset(buff,0,PINGSIZE);
 	receiveWholeServerPing(buff,PINGSIZE);
         printf("%s\n",buff);
 	//R S
+	int currTotal=0;
 	while(1){
-		char buff[PINGSIZE];
-		char pingBuff[PINGSIZE];
+		u_int64_t currDataSize;
 		memset(buff,0,PINGSIZE);
-		memset(pingBuff,0,PINGSIZE);
 		int status=receiveWholeServerPing(buff,PINGSIZE);
 		if(status<0){
 			printf("O client vai sair porque n recebeu um ping inteiro!!!!\n");
 			raise(SIGINT);
 		}
-		sscanf(buff,"%lu",&dataSize);
-		send(client_socket,pingCorrect,strlen(pingCorrect),0);
-
-		printf("Tamanhos:\ndados: %lu\n",dataSize);
+		sscanf(buff,"%lu",&currDataSize);
+		snprintf(buff,PINGSIZE,"%s",pingCorrect);
+		send(client_socket,buff,PINGSIZE,0);
+		memset(buff,0,PINGSIZE);
+	//	printf("Tamanhos:\ndados: %lu\n",dataSize);
 	
 	
-		char message[dataSize];
-		memset(message,0,dataSize);
-	int total= receiveWholeServerPing(message,dataSize);
+		char message[currDataSize];
+		memset(message,0,currDataSize);
+	int total= receiveWholeServerPing(message,currDataSize);
 		if(total<0){
 			printf("O client vai sair porque n recebeu um chunk inteiro!!!!\n");
 			raise(SIGINT);
@@ -163,21 +169,21 @@ int main(int argc, char ** argv){
 		//system("clear");
 		status=write(fd,message,total);
 		printf("Received chunk of data with size %d from %s\n\nWritting....to here:%s\n",status,inet_ntoa(server_address.sin_addr),argv[1]);
-
-//		printf("Recebidos: %d \n",counter);
-		if(!status){
-			printf("No bytes were written!!! End of file...\n");
-		}
-		else if(status==-1){
+		if(status<0){
 			perror("No bytes written!!!! An error happened\n");
 		}
+		currTotal+=status;
+		
 		printf("Done!!!!!\n");
-		snprintf(pingBuff,PINGSIZE,"%d",status);
-		send(client_socket,pingBuff,PINGSIZE,0);
+		snprintf(buff,PINGSIZE,"%d",status);
+		send(client_socket,buff,PINGSIZE,0);
+		if(currTotal==dataSize){
+			printf("Done!!!\n");
+			raise(SIGINT);
+		
+		}
 		
 	}
-
-	raise(SIGINT);
 	return 0;
 }
 

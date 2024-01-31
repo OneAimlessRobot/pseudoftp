@@ -7,7 +7,7 @@ extern serverState* state;
 int main(int argc, char ** argv){
 	if(argc!=5){
 
-		printf("Precisas de uma porta para o server!!!\nE de um ficheiro para copiar\nE de um tamanho de ping (em bytes)\nE um tamanho de dados (em bytes)\nE do numero maximo de clients\n");
+		printf("Precisas de uma porta para o server!!!\nE de um ficheiro para copiar\nE um tamanho de dados (em bytes)\nE do numero maximo de clients\n");
 		exit(-1);
 	}
 	

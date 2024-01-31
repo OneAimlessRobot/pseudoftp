@@ -1,0 +1,25 @@
+void Arsenal::spawnGLauncher(float x, float y){
+
+    GLauncher*gLauncher=GLauncher::defaultGLauncher();
+    gLauncher->setPos((SDL_FPoint){x,y});
+    gLauncherList.emplace(gLauncherList.begin(),gLauncher);
+
+
+}
+void Arsenal::spawnMLauncher(float x, float y){
+
+    MLauncher*mLauncher=MLauncher::defaultMLauncher();
+    mLauncher->setPos((SDL_FPoint){x,y});
+    mLauncherList.emplace(mLauncherList.begin(),mLauncher);
+
+
+}
+void Arsenal::spawnGun(std::string filePath,float x, float y,caliber bType){
+
+    Gun* gun=EntityManagement::parseGun(filePath);
+    gun->setPos((SDL_FPoint){x,y});
+    gun->setCaliber(bType);
+    gunList.emplace(gunList.begin(),gun);
+
+
+}
