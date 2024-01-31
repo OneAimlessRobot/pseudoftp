@@ -183,7 +183,8 @@ u_int64_t acessVarMtx(pthread_mutex_t * mtx,u_int64_t* var,u_int64_t value,int o
 	(*var)--;
 	break;
 	case 3:
-	(*var)+=value;
+	result=value+(*var);
+	(*var)=result;
 	break;
 	default:
 	break;

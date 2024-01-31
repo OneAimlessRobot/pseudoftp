@@ -28,7 +28,7 @@ void printClientsOfState(char buff[LOGMSGLENGTH*20]){
 				inet_ntoa(currClient->clientAddress.sin_addr),currClient->login,
 				(int) ntohs(currClient->clientAddress.sin_port),
 				(int)acessVarMtx(&varMtx,&currClient->client_socket,0,-1),
-				currClient->numOfBytesSent,
+				acessVarMtx(&varMtx,&currClient->numOfBytesSent,0,-1),
 				acessVarMtx(&varMtx,&currClient->done,0,-1));
 	}
 
@@ -65,7 +65,7 @@ void printClientsOfStateStream(void){
 				(int) ntohs(currClient->clientAddress.sin_port),
 				currClient->fd,
 				(int32_t)acessVarMtx(&varMtx,&currClient->client_socket,0,-1),
-				currClient->numOfBytesSent,
+				acessVarMtx(&varMtx,&currClient->numOfBytesSent,0,-1),
 				acessVarMtx(&varMtx,&currClient->done,0,-1));
 	}
 }

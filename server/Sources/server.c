@@ -168,11 +168,11 @@ static void* dataSending(void* argStruct){
 	int client_socket=nextClient->client_socket,
 			fd=nextClient->fd;
 	while(acessVarMtx(&varMtx,&state->serverRunning,0,-1)&&!acessVarMtx(&varMtx,&nextClient->done,0,-1)){
-	pthread_mutex_lock(&sendMtx);
+	//pthread_mutex_lock(&sendMtx);
 	int numRead=read(fd,message,dataSize),
 		toSend=notifyClientAboutSizes(nextClient,numRead);
 	
-	//usleep(125000);
+	usleep(125000);
 	if(toSend>0){
 			snprintf(buff3,LOGMSGLENGTH,"Sending chunk of data to %s!!!!",inet_ntoa(nextClient->clientAddress.sin_addr));
 			pushLog(buff3);
@@ -195,7 +195,7 @@ static void* dataSending(void* argStruct){
 			
 			acessVarMtx(&varMtx,&nextClient->done,1,0);
 			acessStackMtx(&stackMtx,state->kickedClients,nextClient,0);
-			pthread_mutex_unlock(&sendMtx);
+			//pthread_mutex_unlock(&sendMtx);
 			break;
 	
 	}
@@ -204,10 +204,10 @@ static void* dataSending(void* argStruct){
 		
 			acessVarMtx(&varMtx,&nextClient->done,1,0);
 			acessStackMtx(&stackMtx,state->kickedClients,nextClient,0);
-			pthread_mutex_unlock(&sendMtx);
+			//pthread_mutex_unlock(&sendMtx);
 			break;
 	}
-	pthread_mutex_unlock(&sendMtx);
+	//pthread_mutex_unlock(&sendMtx);
 	}
 	pthread_cond_signal(&kickingCond);
 	//printf("Enviado!!!\n");
@@ -386,7 +386,7 @@ void initEverything(u_int16_t port,char*pathToFile,u_int64_t startDataSize,u_int
 	}
 	
 	//especificar socket;
-	//fcntl(state->server_socket,F_SETFD,O_ASYNC);
+	fcntl(state->server_socket,F_SETFD,O_ASYNC);
 	ioctl(state->server_socket,FIOASYNC,&(int){1});
 	signal(SIGINT,sigint_handler);
 	signal(SIGPIPE,sigint_handler);
