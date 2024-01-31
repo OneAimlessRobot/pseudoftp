@@ -1,13 +1,15 @@
 #!/bin/sh
-
-max=0
-touch file
+if [[ $# -le 4 ]];
+then
+	echo "Argumentos:<# clientes> <path ficheiro de destino> <porta server> <ip server>";
+	exit -1
+fi
+max=1
 while [[ $max -le $1 ]]
 do
 
-	./client files/ozoi$max 9002 192.168.34.223< creds&
-	#./client files/ozoi$max 9002 127.0.0.1< creds&
-	ssleep 0.5
+	./client $2$max $3 $4< creds&
+	sleep 0.5
 	max=$((max +1))
 	echo "Cliente spawnado"
 done
