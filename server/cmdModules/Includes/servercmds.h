@@ -35,5 +35,7 @@ void getMaxClientHardLimit(int64_t argc,clientStruct*client, void** argv,char bu
 
 void addLogin(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZE]);
 
+void kickLogin(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZE]);
+
 
 #endif

@@ -8,7 +8,7 @@
 #include "../Includes/accounts.h"
 const char* pingCorrect= "queroja";
 const char* pingAdmin= "admin";
-
+comparator clientCmp = {compareClients};
 static const char* welcomeAdmin= "Bem vindo, admin!\nPara ajuda, mete 'sh' para veres uma lista de comandos disponiveis!!!!!\n";
 
 serverState* state=NULL;
@@ -49,8 +49,8 @@ void cleanup(void){
 	pthread_join(clientKicker,NULL);
 	pthread_join(graphics,NULL);
 	pthread_join(connectionAccepter,NULL);
-	acessListMtx(&listMtx,state->listOfClients,NULL,0,3);
-	acessListMtx(&listMtx,state->listOfAdmins,NULL,0,3);
+	acessListCompMtx(&listMtx,state->listOfClients,NULL,0,3);
+	acessListCompMtx(&listMtx,state->listOfAdmins,NULL,0,3);
 	acessStackMtx(&listMtx,state->logs,NULL,2);
 	acessStackMtx(&listMtx,state->kickedClients,NULL,2);
 	close(state->server_socket);
@@ -84,7 +84,7 @@ static void* clientKickingFunc(void* args){
 		
 		//printf("Cheguei!!!\n");
 		pthread_mutex_lock(&kickingMtx);
-		while(!(*(u_int64_t*)acessStackMtx(&stackMtx,state->kickedClients,0,3))&&acessVarMtx(&varMtx,&state->serverRunning,0,-1)){
+		while((!(*(u_int64_t*)acessStackMtx(&stackMtx,state->kickedClients,0,3)))&&acessVarMtx(&varMtx,&state->serverRunning,0,-1)){
 			
 			
 			pthread_cond_wait(&kickingCond,&kickingMtx);
@@ -97,25 +97,26 @@ static void* clientKickingFunc(void* args){
 			
 				
 		//printf("Cheguei!!!\n");
-				close((int)acessVarMtx(&varMtx,&nextClient->client_socket,0,-1));
-				close((int)acessVarMtx(&varMtx,&nextClient->fd,0,-1));
 				pthread_t thethread=(pthread_t) acessVarMtx(&varMtx,&nextClient->threadid,0,-1);
 				pthread_join(thethread,NULL);
+				close((int)acessVarMtx(&varMtx,&nextClient->client_socket,0,-1));
+				close((int)acessVarMtx(&varMtx,&nextClient->fd,0,-1));
 				if(!acessVarMtx(&varMtx,&nextClient->isAdmin,0,-1)){
 
 				
-					acessListMtx(&listMtx,state->listOfClients,nextClient,0,1);
+					acessListCompMtx(&listMtx,state->listOfClients,nextClient,0,1);
 					acessVarMtx(&varMtx,&state->clientsActive,0,2);
 					
 
 				}
 				else{
 
-					acessListMtx(&listMtx,state->listOfAdmins,nextClient,0,1);
+					acessListCompMtx(&listMtx,state->listOfAdmins,nextClient,0,1);
 					acessVarMtx(&varMtx,&state->adminsActive,0,2);
 					
 				}
 				free(nextClient);
+				printf("Kickado!!!!\n");
 		}
 		pthread_cond_signal(&acceptingCond);		
 		//printf("Cheguei!!!\n");
@@ -136,7 +137,9 @@ static void* enqueueCmds(void* argStruct){
 	while(acessVarMtx(&varMtx,&state->serverRunning,0,-1)&&!acessVarMtx(&varMtx,&nextClient->done,0,-1)){
 	char input[LINESIZE];
 	memset(input,0,LINESIZE);
+	pthread_mutex_lock(&sendMtx);
 	int result=receiveClientCommand(nextClient,input);
+	pthread_mutex_unlock(&sendMtx);
 	if(result>0){
 			
 			command cmd;
@@ -148,8 +151,10 @@ static void* enqueueCmds(void* argStruct){
 			cmd.whoItWas=nextClient;
 			char outBuff[LINESIZE]={0};
 			runCmdLine(cmdLine,cmd.whoItWas,cmd.string,outBuff);
+			pthread_mutex_lock(&sendMtx);
 			send((int)acessVarMtx(&varMtx,&cmd.whoItWas->client_socket,0,-1),outBuff,LINESIZE,0);
-
+			pthread_mutex_unlock(&sendMtx);
+	
 	}
 	}
 	return NULL;
@@ -168,46 +173,46 @@ static void* dataSending(void* argStruct){
 	int client_socket=nextClient->client_socket,
 			fd=nextClient->fd;
 	while(acessVarMtx(&varMtx,&state->serverRunning,0,-1)&&!acessVarMtx(&varMtx,&nextClient->done,0,-1)){
-	//pthread_mutex_lock(&sendMtx);
+	pthread_mutex_lock(&sendMtx);
 	int numRead=read(fd,message,dataSize),
-		toSend=notifyClientAboutSizes(nextClient,numRead);
 	
+	toSend=notifyClientAboutSizes(nextClient,numRead);
 	usleep(125000);
 	if(toSend>0){
 			snprintf(buff3,LOGMSGLENGTH,"Sending chunk of data to %s!!!!",inet_ntoa(nextClient->clientAddress.sin_addr));
 			pushLog(buff3);
-			send(client_socket,message,numRead,0);
+			send((int)acessVarMtx(&varMtx,&client_socket,0,-1),message,numRead,0);
 			receiveWholeClientPing(nextClient,pingBuff,PINGSIZE);
 			int numSent=-1;
 			sscanf(pingBuff,"%d",&numSent);
-	//		printf("Recebemos que o cliente recebeu %d bytes!!!!\n",numSent);
+			printf("Recebemos que o cliente recebeu %d bytes!!!!\n",numSent);
 			
 			
 	//		printf("O cliente recebeu %lu bytes no total!!!!\n",acessVarMtx(&varMtx,&nextClient->numOfBytesSent,0,-1));
 		
 		acessVarMtx(&varMtx,&nextClient->numOfBytesSent,numSent,3);
-		u_int64_t clientCurrTotal=acessVarMtx(&varMtx,&nextClient->numOfBytesSent,0,-1);
+		u_int64_t clientCurrTotal;
 		acessVarMtx(&varMtx,&state->totalSent,numSent,3);
 		//printf("%lu\n",clientCurrTotal);
-		if(clientCurrTotal==client_total){
+		if(acessVarMtx(&varMtx,&nextClient->numOfBytesSent,0,-1)==client_total){
 		
 			
 			
 			acessVarMtx(&varMtx,&nextClient->done,1,0);
 			acessStackMtx(&stackMtx,state->kickedClients,nextClient,0);
-			//pthread_mutex_unlock(&sendMtx);
+			pthread_mutex_unlock(&sendMtx);
 			break;
 	
 	}
 	}
 	else{
-		
+			//printf("Timed out or smth!!!\n");
 			acessVarMtx(&varMtx,&nextClient->done,1,0);
 			acessStackMtx(&stackMtx,state->kickedClients,nextClient,0);
-			//pthread_mutex_unlock(&sendMtx);
+			pthread_mutex_unlock(&sendMtx);
 			break;
 	}
-	//pthread_mutex_unlock(&sendMtx);
+	pthread_mutex_unlock(&sendMtx);
 	}
 	pthread_cond_signal(&kickingCond);
 	//printf("Enviado!!!\n");
@@ -230,7 +235,7 @@ char ping[PINGSIZE]={0},
 	strcpy(passPrompt,passWordPrompt);
 
 		int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
-	
+		
 		send(currClient->client_socket,userPrompt,FIELDLENGTH+1,0);
 		receiveWholeClientPing(currClient,login.user,FIELDLENGTH+1);
 		send(currClient->client_socket,passPrompt,FIELDLENGTH+1,0);
@@ -246,21 +251,27 @@ char ping[PINGSIZE]={0},
 			memset(currClient->login,0,FIELDLENGTH+1);
 			strncpy(currClient->login,storedClient->user,FIELDLENGTH);
 			acessVarMtx(&varMtx,&state->clientsActive,0,1);
-			acessListMtx(&listMtx,state->listOfClients,currClient,0,0);
+			acessListCompMtx(&listMtx,state->listOfClients,currClient,0,0);
 			
 			snprintf(ping,PINGSIZE,"%lu", currClient->bytesToRead);
+			pthread_mutex_lock(&sendMtx);
 			send(currClient->client_socket,ping,PINGSIZE,0);
+			pthread_mutex_unlock(&sendMtx);
 			memset(ping,0,PINGSIZE);
+			pthread_mutex_lock(&sendMtx);
 			receiveWholeClientPing(currClient,ping,PINGSIZE);
-
+			pthread_mutex_unlock(&sendMtx);
+			
 			snprintf(buff3,LOGMSGLENGTH,"client got the sizes!!!!!!!");
 			pushLog(buff3);
 	
 			memset(ping,0,PINGSIZE);
 			snprintf(ping,PINGSIZE,"Bem vindo, %s!\n",login.user);
-			
+			pthread_mutex_lock(&sendMtx);
 			send(currClient->client_socket,ping,PINGSIZE,0);
+			pthread_mutex_unlock(&sendMtx);
 			pthread_create(&currClient->threadid,NULL,dataSending,currClient);
+			pthread_detach(currClient->threadid);
 			return 1;
 			}
 			else{
@@ -280,9 +291,12 @@ char ping[PINGSIZE]={0},
 			acessVarMtx(&varMtx,&currClient->isAdmin,1,0);
 			strncpy(currClient->login,pingAdmin,FIELDLENGTH);
 			acessVarMtx(&varMtx,&state->adminsActive,0,1);
-			acessListMtx(&listMtx,state->listOfAdmins,currClient,0,0);
+			acessListCompMtx(&listMtx,state->listOfAdmins,currClient,0,0);
+			pthread_mutex_lock(&sendMtx);
 			send(currClient->client_socket,welcomeAdmin,LINESIZE,0);
+			pthread_mutex_unlock(&sendMtx);
 			pthread_create(&currClient->threadid,NULL,enqueueCmds,currClient);
+			pthread_detach(currClient->threadid);
 			return 2;
 		}
 		else{
@@ -296,11 +310,11 @@ char ping[PINGSIZE]={0},
 }
 static void* connectionAccepting(void* argStruct){
 	char buff[LOGMSGLENGTH]={0};
-			
-	while(acessVarMtx(&varMtx,&state->serverRunning,0,-1)){
 	
+	while(acessVarMtx(&varMtx,&state->serverRunning,0,-1)){
+	/*
 
-	/*	
+	
 	pthread_mutex_lock(&acceptingMtx);
 	while(acessVarMtx(&varMtx,&state->clientsActive,0,-1)>=acessVarMtx(&varMtx,&state->maxNumOfClients,0,-1)&&acessVarMtx(&varMtx,&state->serverRunning,0,-1)){
 
@@ -312,9 +326,8 @@ static void* connectionAccepting(void* argStruct){
 
 		return NULL;
 	}
-	
-		while(acessVarMtx(&varMtx,&state->clientsActive,0,-1)<acessVarMtx(&varMtx,&state->maxNumOfClients,0,-1)&&acessVarMtx(&varMtx,&state->serverRunning,0,-1)){
-		*/
+	*/
+		//while(acessVarMtx(&varMtx,&state->clientsActive,0,-1)<acessVarMtx(&varMtx,&state->maxNumOfClients,0,-1)&&acessVarMtx(&varMtx,&state->serverRunning,0,-1)){
 		int iResult;
 		struct timeval tv;
 		fd_set rfds;
@@ -326,17 +339,24 @@ static void* connectionAccepting(void* argStruct){
 		iResult=select(state->server_socket+1,&rfds,(fd_set*)0,(fd_set*)0,&tv);
 		if(iResult>0){
 		clientStruct currClient;
-		//memset(&currClient,0,sizeof(clientStruct));
-		//memset(&currClient.clientAddress,0,sizeof(struct sockaddr));
-		//memset(&currClient.addrLength,0,sizeof(socklen_t));
 		memset(currClient.login,0,FIELDLENGTH+1);
 		currClient.done=0;
 		currClient.isAdmin=0;
 		currClient.addrLength= sizeof(currClient.clientAddress);
 		currClient.client_socket=accept(state->server_socket,(struct sockaddr*)(&currClient.clientAddress),&(currClient.addrLength));
-		memset(buff,0,LOGMSGLENGTH);
-		if((currClient.fd=open((char*)acessVarMtx(&varMtx,&state->pathToFile,0,-1),O_RDONLY,0666))<0){
 
+		
+		long flags= fcntl(currClient.client_socket,F_GETFL);
+ 	        flags |= O_NONBLOCK;
+        	fcntl(currClient.client_socket,F_SETFL,flags);
+		
+		memset(buff,0,LOGMSGLENGTH);
+		if((currClient.fd=open((char*)acessVarMtx(&varMtx,&state->pathToFile,0,-1),O_RDONLY,0777))<0){
+			
+			long flags2= fcntl(currClient.fd,F_GETFL);
+ 	        	flags2 |= O_NONBLOCK;
+        		fcntl(currClient.fd,F_SETFL,flags2);
+			
 			snprintf(buff,LOGMSGLENGTH,"Accepted connection from %s, mas ficheiro %s e invalido. Conexao sera largada...",inet_ntoa(currClient.clientAddress.sin_addr),(char*)acessVarMtx(&varMtx,&state->pathToFile,0,-1));
 			pushLog(buff);
 			perror("Nao foi possivel abrir nada!!!!\n");
@@ -356,9 +376,9 @@ static void* connectionAccepting(void* argStruct){
 			pushLog(buff);
 		}
 	//}
-	/*
+	
 	acessVarMtx(&varMtx,&state->idle,0,0);
-	*/	
+		
 	//pushLog("Fechou a loja!!!!");
 	}
 	return NULL;
@@ -386,8 +406,12 @@ void initEverything(u_int16_t port,char*pathToFile,u_int64_t startDataSize,u_int
 	}
 	
 	//especificar socket;
-	fcntl(state->server_socket,F_SETFD,O_ASYNC);
-	ioctl(state->server_socket,FIOASYNC,&(int){1});
+	//fcntl(state->server_socket,F_SETFL,O_ASYNC|O_NONBLOCK);
+/*	ioctl(state->server_socket,FIOASYNC,&(int){1});
+	long flags= fcntl(state->server_socket,F_GETFL);
+ 	flags |= O_NONBLOCK|O_ASYNC;
+        fcntl(state->server_socket,F_SETFL,flags);
+*/
 	signal(SIGINT,sigint_handler);
 	signal(SIGPIPE,sigint_handler);
 	state->server_address.sin_family=AF_INET;
@@ -413,9 +437,9 @@ void initEverything(u_int16_t port,char*pathToFile,u_int64_t startDataSize,u_int
 	state->idle=1;
 	state->adminsActive=0;
 	state->clientsActive=0;
-	state->listOfClients=initDList(sizeof(clientStruct));
+	state->listOfClients=initDListComp(sizeof(clientStruct),&clientCmp);
 	state->listOfClients->head=NULL;
-	state->listOfAdmins=initDList(sizeof(clientStruct));
+	state->listOfAdmins=initDListComp(sizeof(clientStruct),&clientCmp);
 	state->listOfAdmins->head=NULL;
 	state->logs=initDLQueue(LOGMSGLENGTH);
 	state->kickedClients=initDLStack(sizeof(clientStruct));

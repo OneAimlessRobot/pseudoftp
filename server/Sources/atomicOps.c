@@ -230,3 +230,67 @@ pthread_mutex_unlock(mtx);
 
 }
 
+void* acessListCompMtx(pthread_mutex_t * mtx,DListWComp* list,void* value,u_int64_t index,int op){
+
+	void* result=NULL;
+	if(list){
+	pthread_mutex_lock(mtx);
+	switch(op){
+	break;
+	case 0:
+	if(value){
+	addElemToListComp2(list,value);
+	}
+	break;
+	case 1:
+	if(list->currSize&&value){
+	remElemFromListComp2(list,value);
+	}
+	break;
+	case 2:
+	if(list->currSize&&index>=0&&index<list->currSize){
+	result=getElemAtIndexComp(list,index);
+	}
+	break;
+	case 3:
+	destroyDListComp(list);
+	break;
+	case 4:
+	result=&list->currSize;
+	break;
+	case 5:
+	result=(void*)list;
+	break;
+	default:
+	break;
+	}
+	pthread_mutex_unlock(mtx);
+	}
+	return result;
+
+
+
+
+}
+
+void* acessItCompMtx(pthread_mutex_t * mtx,dliteratorcomp* it,int op){
+
+void* result=NULL;
+pthread_mutex_lock(mtx);
+	switch(op){
+	case 0:
+	result= nextItComp(it);
+	break;
+	case 1:
+	result= hasNextItComp(it);
+	break;
+	case 2:
+	rewindItComp(it);
+	break;
+	default:
+	break;
+	}
+pthread_mutex_unlock(mtx);
+	return result;
+
+}

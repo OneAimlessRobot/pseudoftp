@@ -45,7 +45,7 @@ memset(ping,0,PINGSIZE);
 int client_socket=(int)acessVarMtx(&varMtx,&currClient->client_socket,0,-1);
 int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
 		snprintf(ping,PINGSIZE,"%d", numRead);
-		send(client_socket,ping,PINGSIZE,0);
+		send((int)acessVarMtx(&varMtx,&client_socket,0,-1),ping,PINGSIZE,0);
 		
 		int status=receiveWholeClientPing(currClient,ping,PINGSIZE);
 		//printf("%d %hu\n",status,pingSize);
@@ -67,5 +67,20 @@ int fd=(int)acessVarMtx(&varMtx,&currClient->fd,0,-1);
 			//printf("Timed out. Dropping...\n");
 		}
 		return status;
+
+}
+
+int compareClients(void* arg1,void* arg2){
+	
+	clientStruct* c1= (clientStruct*) arg1;
+	clientStruct* c2= (clientStruct*) arg2;
+	int result=1;
+	result=result&&memcmp(&c1->threadid,&c2->threadid,sizeof(pthread_t));
+	result=result&&memcmp(&c1->clientAddress,&c2->clientAddress,sizeof(struct sockaddr_in));
+	result=result&&memcmp(&c1->fd,&c2->fd,sizeof(int));
+	result=result&&memcmp(&c1->client_socket,&c2->client_socket,sizeof(int));
+	result=result&&memcmp(&c1->isAdmin,&c2->isAdmin,sizeof(u_int64_t));
+	result=result&&memcmp(c1->login,c2->login,FIELDLENGTH+1);
+	return result;
 
 }

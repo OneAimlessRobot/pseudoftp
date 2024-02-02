@@ -5,4 +5,7 @@ int notifyClientAboutSizes(clientStruct* currClient,int numRead);
 
 int receiveWholeClientPing(clientStruct*client,char message[],u_int64_t size);
 
+int compareClients(void* arg1,void* arg2);
+
+extern comparator clientCmp;
 #endif

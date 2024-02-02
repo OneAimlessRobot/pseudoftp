@@ -1,7 +1,7 @@
 #!/bin/sh
-if [[ $# -le 4 ]];
+if [[ $# -ne 4 ]];
 then
-	echo "Argumentos:<# clientes> <path ficheiro de destino> <porta server> <ip server>";
+	echo "Argumentos:<# clientes> <path ficheiro de destino> <porta server> <ip server>. Foram dados $# argumentos";
 	exit -1
 fi
 max=1

@@ -2,7 +2,11 @@
 #define ATOMICOPS_H
 void* acessListMtx(pthread_mutex_t * mtx,DListW* list,void* value,u_int64_t index,int op);
 
+void* acessListCompMtx(pthread_mutex_t * mtx,DListWComp* list,void* value,u_int64_t index,int op);
+
 void* acessItMtx(pthread_mutex_t * mtx,dliterator* it,int op);
+
+void* acessItCompMtx(pthread_mutex_t * mtx,dliteratorcomp* it,int op);
 
 void* acessStackMtx(pthread_mutex_t * mtx,stackList* stck,void* value,int op);
 

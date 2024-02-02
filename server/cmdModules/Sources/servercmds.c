@@ -12,6 +12,7 @@ cmdstruct servercmds[]={
 			{"gps",getPingSize,"Consulta tamanho de ping"},
 			{"gds",getDataSize,"Consulta tamanho de dados"},
 			{"gaq",getAdminQuota,"Consulta numero de admins"},
+			{"kick",kickLogin,"Expulsar login"},
 			{"gcq",getClientQuota,"Consulta numero de clients"},
 			{"gcl",getClientList,"Consulta a lista de clients"},
 			{"gll",getLoadedLogins,"Consulta a lista de logins carregados"},
@@ -88,7 +89,8 @@ void setMaxClientQuota(int64_t argc,clientStruct*client, void** argv,char buff[L
 void sair(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZE]){
 
 	snprintf(buff,LINESIZE,"die");
-         acessStackMtx(&stackMtx,state->kickedClients,client,0);
+        acessVarMtx(&varMtx,&client->done,0,1);
+	acessStackMtx(&stackMtx,state->kickedClients,client,0);
 	pthread_cond_signal(&kickingCond);
 
 
@@ -165,6 +167,22 @@ void addLogin(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZE])
 	addToHTComp(&loadedLogins,added);
 	snprintf(buff,LINESIZE,"Username %s adicionado!!!!!!!!\n",added->user);
 	free(added);
+
+}
+
+void kickLogin(int64_t argc,clientStruct*client, void** argv,char buff[LINESIZE]){
+
+	if(argc!=2){
+
+	snprintf(buff,LINESIZE,"Index na lista de clientes necessario!!!!\n");
+	return;
+
+	}
+	
+	clientStruct* kickedClient= acessListMtx(&listMtx, state->listOfClients,NULL,atoi(argv[1]),2);
+	acessVarMtx(&varMtx,&kickedClient->done,1,0);
+	
+	snprintf(buff,LINESIZE,"Cliente removido!!!!\n");
 
 }
 
